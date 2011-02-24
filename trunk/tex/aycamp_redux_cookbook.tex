@@ -1,0 +1,23 @@
+Cookbook for reducing imaging and spectroscopy taken during astronomy
+camp using IDL:
+
+I am assuming that you're working from an astronomy-camp computer that
+has been set up with all the requisite IDL libraries (e.g., apollo).
+Log into the machine and be sure you have all the following
+IDL environment variables set.  For example, in tcsh you need [look at
+  my .tcshrc file]
+
+Preliminaries:
+
+Your data should be organized on a night-by-night basis.  Make a new
+directory called 'Raw' and move all your raw data (or, better yet, a
+copy of your raw data) into that directory and gzip.  For example,
+your directory structure for two night's worth of data might look
+like:
+
+mydata
+  21jun2009
+    Raw
+  22jun2009
+    Raw
+
