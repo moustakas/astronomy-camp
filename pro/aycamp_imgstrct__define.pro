@@ -1,6 +1,6 @@
-pro imgstrct__define
+pro aycamp_imgstrct__define
 ; define the imaging inspection structure
-    tmp = {imgstrct, $
+    tmp = {aycamp_imgstrct, $
       frame: 0,   $             ; FRAME Number
       flg_anly: 0,$             ; Analysis flag 0=Don't Analyse, 2=bias sub, 4=scatt light
       obj: '', $               ; Object Name
