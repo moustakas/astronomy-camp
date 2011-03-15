@@ -142,7 +142,7 @@ pro aycamp_img_strct, struct, ccd=ccd, tel=tel, LIST=list, $
     endcase 
     
 ;  Create the Structure
-    tmp = {imgstrct}
+    tmp = {aycamp_imgstrct}
     struct = replicate(tmp,nimg) 
 ; Default all files to be analysed
     struct.flg_anly = 1
