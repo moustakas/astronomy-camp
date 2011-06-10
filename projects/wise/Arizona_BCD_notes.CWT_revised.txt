@@ -1,0 +1,20 @@
+#Ra   Dec   Priority NED comments
+124926.9	 203813.2	A   	SDSS detection optically faint 					R2=19.29
+132653.0 	-062424.4	A	1990MNRAS.243..692M, imaging survey, no source reference 	R2=17.29
+134548.3 	 023346.9	A 	SDSS detection optically faint 					R2=19.37
+141507.4 	 694929.8	B	nothing within 0.1 arcmin					R2=17.72
+142516.0 	 162308.0	C	SDSS source and 2MASS, no reference				R2=15.48
+162839.7 	 432842.1	A	Nothing within 0.1 arcmin					R2=17.90	
+173555.4 	-010608.3	A	Nothing within 0.1 arcmin					R2=17.25
+180112.7 	 865105.7	A	Nothing within 0.1 arcmin					R2=17.98
+181049.8 	 695029.5	A+	IRAS source, best BCD candidate out of the whole bunch		R2=13.13
+185058.7 	 502533.3	A	IRAS source							R2=18.92
+193209.8 	 285656.5	C	NVSS radio source, looks like a crowded field,			R2=16.87
+201955.2 	 790612.3	A	nothing within 0.1 arcmin					R2=19.34
+215029.8 	 413504.0	B	nothing within 0.1 arcmin					R2=17.40
+232357.4 	 114810.8	A	IRAS source							R2=18.23
+X 143905.3 	 245353.4	D	SDSS source with spectra, BCG-like spectra, a new discovery	R2=19.10	It's in Seyfert region on BPT diagram
+X 160949.8 	 020130.7	D	IRAS galaxy z = 0.22 Spitzer					R2=18.52	IRAS FSC 16073+0209, Source 25 in Sargsyan et al 2008, with strong IRS 10micron silicon absorption, z = 0.223
+X 161809.4 	 013921.8	D	2002ApJS..143..277K						R2=17.26	IRAS  16155+0146, Spec shown in 1999ApJ...522..113V, page 117, strong emission lines; [NII]6583/Ha = 0.45, and [OIII]5007/Hbeta = 956, give this source to be in Seyfert region on BPT.
+X 222921.9 	 443208.6	D	I think we might have DBSP data for this source already?	R2=17.90	Yes, it's an AGN
+235215.1 	-043210.6	D 	1996MNRAS.279..459C, survey source, with z??			R2=19.45	23h49m41.16s  -04d48m52.4s z=0.157000, from Clements et al 1996, using 4.2m WHT Faint Object Spec 2, estimate log(L60/Lsun) = 11.17. No further discussion on the spec
