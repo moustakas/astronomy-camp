@@ -16,41 +16,24 @@
 ;   J. Moustakas, 2010 Jun 15, UCSD
 ;-
 
-pro write_calib_planfile, planfile, calibplanfile
-; write out a plan file for just the calibration data
-    
-    plan = yanny_readone(planfile,hdr=hdr)
-    calib = where(strtrim(plan.flavor,2) ne 'science')
-    new = plan[calib]
+pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
+  standards=standards, science=science, sensfunc=sensfunc, $
+  unpack_projects=unpack_projects, fluxcal=fluxcal, clobber=clobber, $
+  chk=chk, qaplot=qaplot
 
-    plotfile = where(strmatch(hdr,'*plotfile*'))
-    hdr[plotfile] = 'plotfile '+repstr(calibplanfile,'.par','.ps')
-    logfile = where(strmatch(hdr,'*logfile*'))
-    hdr[logfile] = 'logfile '+repstr(calibplanfile,'.par','.log')
-
-    splog, 'Writing '+calibplanfile
-    yanny_write, calibplanfile, ptr_new(new), hdr=hdr, /align
-
-return
-end
-
-pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
-  plan=plan, calib=calib, standards=standards, sensfunc=sensfunc, $
-  science=science, unpack_projects=unpack_projects, fluxcal=fluxcal, $
-  clobber=clobber, chk=chk, qaplot=qaplot
-
-    if (n_elements(datapath) eq 0) then datapath = $
-      getenv('AYCAMP_DATA')+'2010/bok/'
+    datapath = getenv('AYCAMP_DATA')+'2010/bok/'
     splog, 'Data path '+datapath
 
     badpixfile = getenv('AYCAMP_DIR')+'/data/bok_badpix.dat'
     if (file_test(badpixfile) eq 0) then message, $
       'Bad pixel file '+badpixfile+' not found'
     sensfuncfile = datapath+'sensfunc_2010.fits'
+
+    trim_sedge = 5 ; trim region
+    trim_wave = trim_sedge*2
     
     if (n_elements(night) eq 0) then night = $
-      ['21jun10']
-;     ['17jun10','18jun10','20jun10']
+      ['16jun10','17jun10','18jun10','20jun10','21jun10']
     nnight = n_elements(night)
 
     for inight = 0, nnight-1 do begin
@@ -70,8 +53,9 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
        calibplanfile = 'plan_calib_'+night[inight]+'.par'
 
 ; ##################################################
-; repair bad pixels, clean up headers, and move the spectra to the Raw
-; subdirectory for further processing
+; reading the data in the "rawdata" directory, repair bad pixels,
+; clean up headers, and move the spectra to the "Raw" subdirectory for
+; further processing 
        if keyword_set(fixbadpix) then begin
           splog, 'Reading '+badpixfile
           readcol, badpixfile, x1, x2, y1, y2, comment='#', $
@@ -134,13 +118,10 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
              splog, 'No files found in '+'Raw/'
              continue
           endif
-          long_plan, '*.fits.gz', 'Raw/', $
-            planfile=planfile
+          long_plan, '*.fits.gz', 'Raw/', planfile=planfile
 ; make an edit script here
           old = yanny_readone(planfile,hdr=hdr)
           new = aycamp_find_calspec(old,radius=radius)
-;         maxobj = where(strmatch(hdr,'*maxobj*'))
-;         hdr[maxobj] = 'maxobj 1'
           twi = where(strmatch(new.target,'*twi*'),ntwi)
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
@@ -169,6 +150,13 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
           endcase          
           new = new[keep]
           struct_print, new
+
+; parameter defaults
+          hdr = hdr[where(strcompress(hdr,/remove) ne '')]
+          maxobj = where(strmatch(hdr,'*maxobj*'))
+          hdr[maxobj] = 'maxobj 1'
+          hdr = [hdr,'nozap 1','nohelio 1','noflex 1','novac 1','skytrace 0']
+
           yanny_write, planfile, ptr_new(new), hdr=hdr, /align
           write_calib_planfile, planfile, calibplanfile
        endif 
@@ -176,50 +164,69 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
 ; ##################################################
 ; reduce the calibration data
        if keyword_set(calib) then begin
-          aycamp_long_reduce, calibplanfile, /justcalib, $
-            /verbose, calibclobber=clobber
+          long_reduce, calibplanfile, /justcalib, calibclobber=clobber
        endif
 
 ; ##################################################
-; reduce and extract the standards
+; reduce and extract the standards, if any
        if keyword_set(standards) then begin
-          aycamp_long_reduce, calibplanfile, /juststd, $
-            /novac, clobber=clobber, /nohelio, skytrace=0
+          long_reduce, calibplanfile, /juststd, sciclobber=clobber
        endif
 
 ; ##################################################
 ; reduce the objects
        if keyword_set(science) then begin
-          aycamp_long_reduce, planfile, clobber=clobber, $
-            /justsci, /novac, /nohelio, niter=3, chk=chk
+          long_reduce, planfile, sciclobber=clobber, /justsci, chk=chk, /nolocal
        endif
     endfor 
        
 ; ##################################################
-; build the sensitivity function from all the nights
+; build the sensitivity function from all the nights 
+;   push this to its own routine!
     if keyword_set(sensfunc) then begin
+       delvarx, stdplan
        for inight = 0, nnight-1 do begin
           planfile = datapath+night[inight]+'/plan_'+night[inight]+'.par'
-          plan1 = yanny_readone(planfile)
-          plan1.filename = datapath+night[inight]+'/Science/std-'+strtrim(plan1.filename,2)
-          if (inight eq 0) then plan = plan1 else $
-            plan = [plan,plan1]
+          stdplan1 = yanny_readone(planfile)
+          std = where((strmatch(stdplan1.starname,'*...*') eq 0),nstd)
+          if (nstd ne 0) then begin
+             stdplan1 = stdplan1[std]
+             stdplan1.filename = datapath+night[inight]+'/Science/std-'+$
+               strtrim(stdplan1.filename,2)
+             if (n_elements(stdplan) eq 0) then stdplan = stdplan1 else $
+               stdplan = [stdplan,stdplan1]
+          endif else splog, 'No standard stars observed on night '+night[inight]+'!'
        endfor
-       std = where((strmatch(plan.starname,'*...*') eq 0),nstd)
-       splog, 'Found '+string(nstd,format='(I0)')+' standards'
-       stdfiles = strtrim(plan[std].filename,2)
-       std_names = strtrim(plan[std].starfile,2)
+       if (n_elements(stdplan) ne 0) then begin
+          struct_print, stdplan
+          keep = where($
+            (strmatch(stdplan.filename,'*21jun10.0034*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*18jun10_0033*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*18jun10_0034*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*20jun10.0078*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*17jun10_0018*',/fold) eq 0))
+          stdplan = stdplan[keep]
+          nstd = n_elements(stdplan)
+          splog, 'Building '+sensfuncfile+' from '+string(nstd,format='(I0)')+' standards'
+          stdfiles = strtrim(stdplan.filename,2)
+          std_names = strtrim(stdplan.starfile,2)
 
-       sens = aycamp_long_sensfunc(stdfiles,sensfuncfile,$
-         std_name=std_names,/msk_balm)
+; do the fit, masking the bluest and reddest pixels
+          ncol = 1200 & nmask = 10
+          inmask = intarr(ncol)+1
+          inmask[0:nmask-1] = 0
+          inmask[ncol-nmask-1:ncol-1] = 0
+          sens = long_sensfunc(stdfiles,sensfuncfile,sensfit=sensfit,$
+            std_name=std_names,wave=wave,flux=flux,nogrey=0,inmask=inmask,$
+;            /msk_balm)
+       endif else splog, 'No standard stars observed!'
     endif
 
 ; ##################################################
+;   push this to its own routine!
     if keyword_set(fluxcal) then begin
        for inight = 0, nnight-1 do begin
           pushd, datapath+night[inight]
-
-          trim = 10
           infiles = file_search('Science/sci-*.fits*',count=nspec)
           info = iforage(infiles)
           ra = 15D*im_hms2dec(info.ra)
@@ -232,9 +239,8 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
              outfile = 'Fspec/'+obj[these[0]]+'.fits'
              skyfile = 'Fspec/'+obj[these[0]]+'.sky.fits'
              niceprint, infiles[these]
-             long_coadd, infiles[these], 1, wave=wave, $
-               flux=flux, ivar=ivar, outfil=outfile, $
-               skyfil=skyfile   ;, /box
+             long_coadd, infiles[these], 1, wave=wave, flux=flux, $
+               ivar=ivar, outfil=outfile, skyfil=skyfile, /box
           endfor
 
 ; flux-calibrate, trim crap pixels from each end and convert to
@@ -251,15 +257,15 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
              ferr = mrdfits(outfiles[iobj],1,/silent)
              wave = mrdfits(outfiles[iobj],2,/silent)
              npix = n_elements(wave)
-             flux = 1E-17*flux[trim:npix-trim-1]
-             ferr = 1E-17*ferr[trim:npix-trim-1]
-             wave = wave[trim:npix-trim-1]
+             flux = 1E-17*flux[trim_wave:npix-trim_wave-1]
+             ferr = 1E-17*ferr[trim_wave:npix-trim_wave-1]
+             wave = wave[trim_wave:npix-trim_wave-1]
              npix = n_elements(wave)
-; interpolate over pixels affected by strong sky lines
-             mask = ((wave gt 5545.0) and (wave lt 5595.0)) or $
-               ((wave gt 6280.0) and (wave lt 6307.0)) or $
-               ((wave gt 6345.0) and (wave lt 6368.0))
-             flux = djs_maskinterp(flux,mask,wave,/const)
+;; interpolate over pixels affected by strong sky lines
+;             mask = ((wave gt 5545.0) and (wave lt 5595.0)) or $
+;               ((wave gt 6280.0) and (wave lt 6307.0)) or $
+;               ((wave gt 6345.0) and (wave lt 6368.0))
+;             flux = djs_maskinterp(flux,mask,wave,/const)
 ; rebin linearly in wavelength
              dwave = ceil(100D*(max(wave)-min(wave))/(npix-1))/100D
              newwave = dindgen((max(wave)-min(wave))/dwave+1)*dwave+min(wave)
@@ -273,7 +279,7 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
              sxaddpar, hdr, 'CDELT1', dwave, ' dispersion [Angstrom/pixel]'
              sxaddpar, hdr, 'CTYPE1', 'LINEAR', ' projection type'
 ; write out                   
-             openw, lun, repstr(outfiles,'.fits','.txt'), /get_lun
+             openw, lun, repstr(outfiles[iobj],'.fits','.txt'), /get_lun
              niceprintf, lun, wave, flux, ferr
              free_lun, lun
 
@@ -299,10 +305,15 @@ pro reduce_bok_2010, datapath, night=night, fixbadpix=fixbadpix, $
        endfor
     endif
 
+
+    
+    
 stop    
+    
     
 ; ##################################################
 ; coadd multiple exposures of the same object and flux-calibrate 
+;   push this to its own routine!
     if keyword_set(fluxcal) then begin
        for inight = 0, nnight-1 do begin
           planfile = datapath+night[inight]+'/plan_'+night[inight]+'.par'
@@ -526,30 +537,6 @@ stop
 ;       popd
 ;    endif 
 
-;; ##################################################
-;; reduce everything
-;       if keyword_set(reduce) then begin
-;          aycamp_long_reduce, planfile, clobber=clobber, $
-;            /verbose, /novac, /nohelio, niter=1, chk=chk
-;       endif
-
-;       if keyword_set(sensfunc) then begin
-;          thisplan = yanny_readone(planfile)
-;          thisplan.filename = 'Science/std-'+strtrim(thisplan.filename,2)
-;          
-;          std = where((strmatch(thisplan.starname,'*...*') eq 0),nstd)
-;          splog, 'Found '+string(nstd,format='(I0)')+' standards'
-;          if (nstd ne 0) then begin
-;             stdfiles = strtrim(thisplan[std].filename,2)
-;             std_names = strtrim(thisplan[std].starfile,2)
-;             sens = aycamp_long_sensfunc(stdfiles,sensfuncfile,$
-;               std_name=std_names,nresln=45);/msk_balm)
-;stop
-;          endif
-;    endif 
-
-    
-    
 return
 end
 

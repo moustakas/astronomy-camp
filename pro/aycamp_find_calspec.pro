@@ -10,8 +10,7 @@ function aycamp_find_calspec, oldplan, radius=radius
     newplan = struct_addtags(oldplan,starinfo)
 
 ; read the calspec database info file
-    allstd = rsex(getenv('XIDL_DIR')+'/Spec/Longslit/'+$
-      'calib/standards/calspec/calspec_info.txt')
+    allstd = rsex(getenv('AYCAMP_DIR')+'/data/calspec_info.txt')
 
 ; grab the coordinates of the standards from the header
     sci = where(strtrim(newplan.flavor,2) eq 'science',nsci)
