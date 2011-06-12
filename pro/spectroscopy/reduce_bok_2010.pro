@@ -54,8 +54,8 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
 
 ; ##################################################
 ; reading the data in the "rawdata" directory, repair bad pixels,
-; clean up headers, and move the spectra to the "Raw" subdirectory for
-; further processing 
+; remove cosmic rays, clean up headers, and move the spectra to the
+; "Raw" subdirectory for further processing 
        if keyword_set(fixbadpix) then begin
           splog, 'Reading '+badpixfile
           readcol, badpixfile, x1, x2, y1, y2, comment='#', $
@@ -74,10 +74,9 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'INSTRUME', 'bcspeclamps', ' instrument name'
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
-; fix some headers
+; fix headers and bad pixels
                 if strmatch(allfiles[iobj],'*18Jun10_0050*',/fold) then $
                   sxaddpar, hdr, 'OBJECT', 'VeilNebula No.3'
-; fix bad pixels                
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
                    dims = size(image,/dim)
@@ -87,25 +86,26 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                      (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
                    image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
                 endif
-; trim the top and bottom NTRIM pixels; need to update the header 
-                ntrim = 5
+                im_mwrfits, image, outfile, hdr, /clobber
 
-                datasec = strcompress(sxpar(hdr,'DATASEC'),/rem)
-                biassec = strcompress(sxpar(hdr,'BIASSEC'),/rem)
-                data_arr = long(strsplit(datasec,'[*:*,*:*]',/extract))
-                bias_arr = long(strsplit(biassec,'[*:*,*:*]',/extract))
-
-                sxaddpar, hdr, 'DATASEC', '['+strtrim(data_arr[0],2)+':'+$
-                  strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
-                  strtrim(data_arr[3]-2*ntrim,2)+']'
-                sxaddpar, hdr, 'TRIMSEC', '['+strtrim(data_arr[0],2)+':'+$
-                  strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
-                  strtrim(data_arr[3]-2*ntrim,2)+']'
-                sxaddpar, hdr, 'BIASSEC', '['+strtrim(bias_arr[0],2)+':'+$
-                  strtrim(bias_arr[1],2)+','+strtrim(bias_arr[2],2)+':'+$
-                  strtrim(bias_arr[3]-2*ntrim,2)+']'
-
-                im_mwrfits, image[*,ntrim:data_arr[3]-ntrim-1], outfile, hdr, /clobber
+;; trim the top and bottom NTRIM pixels; need to update the header 
+;                ntrim = 5
+;
+;                datasec = strcompress(sxpar(hdr,'DATASEC'),/rem)
+;                biassec = strcompress(sxpar(hdr,'BIASSEC'),/rem)
+;                data_arr = long(strsplit(datasec,'[*:*,*:*]',/extract))
+;                bias_arr = long(strsplit(biassec,'[*:*,*:*]',/extract))
+;
+;                sxaddpar, hdr, 'DATASEC', '['+strtrim(data_arr[0],2)+':'+$
+;                  strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
+;                  strtrim(data_arr[3]-2*ntrim,2)+']'
+;                sxaddpar, hdr, 'TRIMSEC', '['+strtrim(data_arr[0],2)+':'+$
+;                  strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
+;                  strtrim(data_arr[3]-2*ntrim,2)+']'
+;                sxaddpar, hdr, 'BIASSEC', '['+strtrim(bias_arr[0],2)+':'+$
+;                  strtrim(bias_arr[1],2)+','+strtrim(bias_arr[2],2)+':'+$
+;                  strtrim(bias_arr[3]-2*ntrim,2)+']'
+;                im_mwrfits, image[*,ntrim:data_arr[3]-ntrim-1], outfile, hdr, /clobber
              endelse
           endfor
        endif 
@@ -228,12 +228,17 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
        for inight = 0, nnight-1 do begin
           pushd, datapath+night[inight]
           infiles = file_search('Science/sci-*.fits*',count=nspec)
-          info = iforage(infiles)
+          info = aycamp_forage(infiles)
           ra = 15D*im_hms2dec(info.ra)
           dec = im_hms2dec(info.dec)
           obj = strcompress(info.object,/remove)
           allgrp = spheregroup(ra,dec,15/3600.0)
           grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+pick up here - coadd observations across
+unpack projects!
+          
+          
           for ig = 0, n_elements(grp)-1 do begin
              these = where(grp[ig] eq allgrp,nthese)
              outfile = 'Fspec/'+obj[these[0]]+'.fits'
