@@ -1,0 +1,68 @@
+In the "Observing Goals" thread, Don has listed the wide array of
+telescopes and instruments that you will have access to during camp --
+the goal of this thread is to suggest and discuss possible projects
+that you may want to do.
+
+Keep in mind that these projects are simply suggestions -- you are
+more than welcome to come up with your own ideas -- although these
+particular projects have been chosen to be "doable" with the available
+facilities and with the available time. Also keep in mind that you
+don't have to show up at camp knowing exactly what you want to do --
+we'll be talking a lot about this the first couple days.
+
+So, here are some ideas of things you can do using the B&C optical
+spectrograph at the 2.3-meter Bok telescope. A spectrograph is like a
+prism that allows you to see many different colors (or wavelengths) of
+light at the same time -- think of a rainbow.
+
+1) Build a "stellar spectral atlas" by observing a wide range of stars
+-- from red supergiants like Betelgeuse
+http://en.wikipedia.org/wiki/Betelgeuse to the much more common
+"dwarf" stars (like the Sun, which is a G-type dwarf star). Analyze
+and understand your spectral atlas.
+
+2) Measure the "metallicity" of M101, the "Pinwheel Galaxy"
+(http://en.wikipedia.org/wiki/Messier_101) from its center to its
+outer regions. The "metallicity" of an object is the sum of all the
+elements heavier than hydrogen and helium (like oxygen, nitrogen,
+etc.). Think about and discuss the implications for the "galactic
+habitable zone" (http://en.wikipedia.org/wiki/Habitable_zone) in M101.
+
+3) Measure the amount of interstellar dust
+(http://en.wikipedia.org/wiki/Cosmic_dust) in different directions
+through our Milky Way galaxy. Dust is very important for nearly all
+observations that astronomers make, so the goal of this project would
+be to understand the importance of "dust" in galaxies.
+
+4) There is a special class of binary (double) star systems called
+"nova-like cataclysmic variables" (http://en.wikipedia.org/wiki/Nova)
+in which one star eclipses (passes in front of) the other star every
+3-4 hours. These systems are interesting because one star is actually
+cannibalizing the other star very slowly. There is a large amount of
+information we can learn about these kinds of star systems, especially
+the "cannibalization" process, with optical spectroscopy, so the idea
+would be to learn as much as possible from the data you acquire. If
+we're ambitious we'll go after a brand new nova-like variable that the
+Kepler (http://kepler.nasa.gov) mission just discovered.
+
+5) Many galaxies have supermassive black holes
+http://en.wikipedia.org/wiki/Supermassive_black_hole in their nucleus
+(center), although there is a lot that we still don't understand about
+them. The goal of this project would be to observe the nuclei of a
+number of nearby galaxies to look for the signature of a black hole in
+their centers, and to speculate on why some galaxies do or do not have
+a black hole.
+
+6) BONUS project! If a sufficiently bright supernova
+(http://en.wikipedia.org/wiki/Supernova) explodes the week before or
+even during camp we will observe it with both the B&C spectrograph and
+with one or more of our imaging camera. This website
+(http://www.rochesterastronomy.org/supernova.html) is an up-to-date
+list of all the supernova that have recently exploded and which are
+still relatively bright. If we get lucky and an "interesting"
+supernova goes off during camp then it's possible that the data we
+take will end up being published in a professional astronomical
+journal.
+
+Have fun!
+John
