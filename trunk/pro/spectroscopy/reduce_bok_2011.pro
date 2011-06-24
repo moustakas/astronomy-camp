@@ -31,7 +31,7 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
 
     trim_wave = 10
     
-    if (n_elements(night) eq 0) then night = ['22jun11']
+    if (n_elements(night) eq 0) then night = ['22jun11','23jun11']
     nnight = n_elements(night)
 
     for inight = 0, nnight-1 do begin
@@ -60,7 +60,7 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
           splog, 'Reading '+badpixfile
           readcol, badpixfile, x1, x2, y1, y2, comment='#', $
             format='L,L,L,L', /silent
-          allfiles = file_search('rawdata/*.fits*',count=nspec)
+          allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fits*',count=nspec)
           if (nspec eq 0) then begin
              splog, 'No files found in '+datapath+'rawdata/'
              continue
@@ -75,8 +75,8 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 ; fix headers and bad pixels
-;               if strmatch(allfiles[iobj],'*18Jun10_0050*',/fold) then $
-;                 sxaddpar, hdr, 'OBJECT', 'VeilNebula No.3'
+                if strmatch(allfiles[iobj],'*22jun11.0045*',/fold) then $
+                  sxaddpar, hdr, 'APERTURE', '4.5'
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
                    dims = size(image,/dim)
@@ -87,13 +87,17 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                    image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
                 endif
 
-splog, 'Reduce cosmic rays!!'                
+; splog, 'Reduce cosmic rays!!'                
                 
 ; trim some pixels from the top
                 ntrim = 5
                 datasec = strcompress(sxpar(hdr,'DATASEC'),/rem)
                 biassec = strcompress(sxpar(hdr,'BIASSEC'),/rem)
                 data_arr = long(strsplit(datasec,'[*:*,*:*]',/extract))
+
+                splog, 'HACK!!!'
+                data_arr = [1,1200,1,124]
+                
                 bias_arr = long(strsplit(biassec,'[*:*,*:*]',/extract))
                 new_data_arr = '['+strtrim(data_arr[0],2)+':'+$
                   strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
@@ -124,13 +128,17 @@ splog, 'Reduce cosmic rays!!'
           long_plan, '*.fits.gz', 'Raw/', planfile=planfile
           old = yanny_readone(planfile,hdr=hdr)
           new = aycamp_find_calspec(old,radius=radius)
-          twi = where(strmatch(new.target,'*twi*'),ntwi)
+          twi = where(strmatch(new.target,'*skyflat*'),ntwi)
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
           case night[inight] of
              '22jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
-               (strmatch(new.filename,'*.000[1-6].*') eq 0)) ; focus
+               (strmatch(new.filename,'*.000[1-6].*') eq 0) and $ ; focus
+               (strmatch(new.filename,'*.0045.*') eq 0)) ; arc w/ wrong slit
+             '23jun11': keep = where($
+               (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
+               (strmatch(new.filename,'*.005[4-7].*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -184,12 +192,12 @@ splog, 'Reduce cosmic rays!!'
        endfor
        if (n_elements(stdplan) ne 0) then begin
           struct_print, stdplan
+;         keep = lindgen(n_elements(stdplan))
           keep = where($
-            (strmatch(stdplan.filename,'*21jun10.0034*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*18jun10_0033*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*18jun10_0034*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*20jun10.0078*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*17jun10_0018*',/fold) eq 0))
+            (strmatch(stdplan.filename,'*22jun11.0051*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*22jun11.0044*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*23jun11.0085*',/fold) eq 0))
           stdplan = stdplan[keep]
           nstd = n_elements(stdplan)
           splog, 'Building '+sensfuncfile+' from '+string(nstd,format='(I0)')+' standards'
@@ -202,7 +210,7 @@ splog, 'Reduce cosmic rays!!'
           inmask[0:nmask-1] = 0
           inmask[ncol-nmask-1:ncol-1] = 0
           sens = long_sensfunc(stdfiles,sensfuncfile,sensfit=sensfit,$
-            std_name=std_names,wave=wave,flux=flux,nogrey=0,inmask=inmask,$
+            std_name=std_names,wave=wave,flux=flux,nogrey=1,inmask=inmask,$
             /msk_balm)
        endif else splog, 'No standard stars observed!'
     endif
@@ -227,7 +235,7 @@ splog, 'Reduce cosmic rays!!'
              aycamp_niceprint, infiles[these], obj[these]
              long_coadd, infiles[these], 1, wave=wave, flux=flux, $
                ivar=ivar, outfil=outfile, skyfil=skyfile, $
-               /medscale, box=1, check=check
+               /medscale, box=0, check=0;, sigrej=30.0; check
           endfor
 
 ; flux-calibrate, trim crap pixels from each end and convert to
@@ -248,47 +256,55 @@ splog, 'Reduce cosmic rays!!'
              ferr = 1E-17*ferr[trim_wave:npix-trim_wave-1]
              wave = wave[trim_wave:npix-trim_wave-1]
              npix = n_elements(wave)
-;; interpolate over pixels affected by strong sky lines
-;             mask = ((wave gt 5545.0) and (wave lt 5595.0)) or $
-;               ((wave gt 6280.0) and (wave lt 6307.0)) or $
-;               ((wave gt 6345.0) and (wave lt 6368.0))
-;             flux = djs_maskinterp(flux,mask,wave,/const)
-; rebin linearly in wavelength
-             dwave = ceil(100D*(max(wave)-min(wave))/(npix-1))/100D
-             newwave = dindgen((max(wave)-min(wave))/dwave+1)*dwave+min(wave)
-             newflux = rebin_spectrum(flux,wave,newwave)
-             newvar = rebin_spectrum(ferr^2,wave,newwave)
-             newferr = sqrt(newvar*(newvar gt 0.0)) ; enforce positivity
-; build the final header; also grab the redshift from NED
-             sxaddpar, hdr, 'CRVAL1', min(wave), ' wavelength at CRPIX1'
-             sxaddpar, hdr, 'CRPIX1', 1D, ' reference pixel number'
-             sxaddpar, hdr, 'CD1_1', dwave, ' dispersion [Angstrom/pixel]'
-             sxaddpar, hdr, 'CDELT1', dwave, ' dispersion [Angstrom/pixel]'
-             sxaddpar, hdr, 'CTYPE1', 'LINEAR', ' projection type'
+
+;;; interpolate over pixels affected by strong sky lines
+;;             mask = ((wave gt 5545.0) and (wave lt 5595.0)) or $
+;;               ((wave gt 6280.0) and (wave lt 6307.0)) or $
+;;               ((wave gt 6345.0) and (wave lt 6368.0))
+;;             flux = djs_maskinterp(flux,mask,wave,/const)
+;; rebin linearly in wavelength
+;             dwave = ceil(100D*(max(wave)-min(wave))/(npix-1))/100D
+;             newwave = dindgen((max(wave)-min(wave))/dwave+1)*dwave+min(wave)
+;             newflux = rebin_spectrum(flux,wave,newwave)
+;             newvar = rebin_spectrum(ferr^2,wave,newwave)
+;             newferr = sqrt(newvar*(newvar gt 0.0)) ; enforce positivity
+;; build the final header; also grab the redshift from NED
+;             sxaddpar, hdr, 'CRVAL1', min(newwave), ' wavelength at CRPIX1'
+;             sxaddpar, hdr, 'CRPIX1', 1D, ' reference pixel number'
+;             sxaddpar, hdr, 'CD1_1', dwave, ' dispersion [Angstrom/pixel]'
+;             sxaddpar, hdr, 'CDELT1', dwave, ' dispersion [Angstrom/pixel]'
+;             sxaddpar, hdr, 'CTYPE1', 'LINEAR', ' projection type'
+;             mwrfits, float(newflux), outfiles[iobj], hdr, /create
+;             mwrfits, float(newferr), outfiles[iobj], hdr
+
 ; write out                   
              openw, lun, repstr(outfiles[iobj],'.fits','.txt'), /get_lun
              niceprintf, lun, wave, flux, ferr
+;            niceprintf, lun, newwave, newflux, newferr
              free_lun, lun
 
-             mwrfits, float(newflux), outfiles[iobj], hdr, /create
-             mwrfits, float(newferr), outfiles[iobj], hdr
              spawn, 'gzip -f '+outfiles[iobj], /sh
           endfor
 
 ; build a QAplot for all the spectra from this night
-          psfile = 'spec1d/qa_'+night[inight]+'.ps'
-          im_plotconfig, 8, pos, psfile=psfile
+;         psfile = 'spec1d/qa_'+night[inight]+'.ps'
+;         im_plotconfig, 8, pos, psfile=psfile
           for iobj = 0, nspec-1 do begin
-             flux = mrdfits(outfiles[iobj]+'.gz',0,hdr,/silent)
-             ferr = mrdfits(outfiles[iobj]+'.gz',1,/silent)
-             wave = make_wave(hdr)
-             obj = sxpar(hdr,'object')
+             obj = repstr(file_basename(outfiles[iobj]),'.fits','')
+             psfile = 'spec1d/qa_'+obj+'.ps'
+             im_plotconfig, 8, pos, psfile=psfile
+             readcol, 'spec1d/'+obj+'.txt', wave, flux, ferr, /silent, format='F,F,F'
+;            flux = mrdfits(outfiles[iobj]+'.gz',0,hdr,/silent)
+;            ferr = mrdfits(outfiles[iobj]+'.gz',1,/silent)
+;            wave = make_wave(hdr)
+;            obj = sxpar(hdr,'object')
              djs_plot, wave, 1D16*flux, xsty=3, ysty=3, ps=10, $
                position=pos, xtitle='Wavelength (\AA)', $
                ytitle='Flux (10^{-16} '+flam_units()+')'
-             legend, [obj], /right, /top, box=0
+             legend, obj, /right, /top, box=0
+             im_plotconfig, psfile=psfile, /psclose, /pdf
           endfor
-          im_plotconfig, psfile=psfile, /psclose, /gzip
+;         im_plotconfig, psfile=psfile, /psclose, /gzip
        endfor
     endif 
 
