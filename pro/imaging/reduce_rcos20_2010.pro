@@ -1,6 +1,6 @@
 ;+
 ; NAME:
-;   REDUCE_RCOS20_2009
+;   REDUCE_RCOS20_2010
 ;
 ; PURPOSE:
 ;   Reduce the RC02/20-inch data from AYCamp/2010.
@@ -23,52 +23,71 @@
 ;   J. Moustakas, 2010 May 31, UCSD
 ;-
 
-pro reduce_rcos20_2010, datapath, night=night, update_headers=update_headers, $
+pro reduce_rcos20_2010, night, update_headers=update_headers, $
   inspect=inspect, mkbias=mkbias, mkdark=mkdark, mkdflat=mkdflat, $
   assign_calib=assign_calib, proc=proc, unpack_projects=unpack_projects, $
   clobber=clobber
 
-    if (n_elements(datapath) eq 0) then datapath = $
-      getenv('AYCAMP_DATA')+'2010/rcos20/16jun10/'
+    datapath = getenv('AYCAMP_DATA')+'2010/rcos20/'
     splog, 'Data path '+datapath
     tel = 'RCOS_20'
     ccd = 'SBIG'
 
-    if (n_elements(night) eq 0) then night = $
-      ['barnards']
+    if (n_elements(night) eq 0) then night = ['16jun10']
     nnight = n_elements(night)
     structfile = night+'_imgstrct.fits'
 
 ; #########################
 ; preliminary reductions
+    for inight = 0, nnight-1 do if (file_test(datapath+night[inight],/dir) eq 0) then $
+      spawn, 'mkdir -p '+datapath+night[inight]
 
-; put the headers in a standard format, removing problematic or irrelevant exposures 
+; put the headers in a standard format, removing problematic or
+; irrelevant exposures  
     if keyword_set(update_headers) then begin 
        for inight = 0, nnight-1 do begin
           pushd, datapath+night[inight]
-          if (file_test('Raw',/dir) eq 0) then $
-            spawn, 'mkdir '+'Raw', /sh
-          allfiles = file_search('rawdata/*.fits*',count=nobj)
+          if (file_test('Raw',/dir) eq 0) then spawn, 'mkdir -p Raw', /sh
+          allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fit*',count=nobj,/fold)
+          info = aycamp_forage(allfiles)
           for iobj = 0, nobj-1 do begin
-             outfile = repstr('Raw/'+file_basename(allfiles[iobj]),'.gz','')
+             image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
+             info[info].object = strcompress(info[info].object,/remove)
+             
+             sxaddpar, hdr, 'RA', repstr(strtrim(info[iobj].objctra,2),' ',':')
+             sxaddpar, hdr, 'DEC', repstr(strtrim(info[iobj].objctdec,2),' ',':')
+             sxaddpar, hdr, 'RDNOISE', 10.0, ' read noise [e]' ; approximate
+             sxaddpar, hdr, 'CCDSUM', strtrim(info[iobj].xbinning,2)+' '+$
+               strtrim(info[iobj].ybinning,2)
+             sxaddpar, hdr, 'EQUINOX', '2000.0', ' equinox of coordinates'
+             date = sxpar(hdr,'DATE-OBS')
+             sxaddpar, hdr, 'DATE-OBS', strmid(info[iobj].date_obs,0,10), ' UT date'
+             sxaddpar, hdr, 'UT', strmid(info[iobj].date_obs,11,10), ' UT time'
+             
+             type = strtrim(info[iobj].imagetyp,2)
+             if strmatch(type,'*light*',/fold) then begin
+                sxaddpar, hdr, 'IMAGETYP', 'object'
+                if (strtrim(info[iobj].object,2) eq '') then message, 'Blank name!'
+                outfile = 'Raw/'+night[inight]+'.'+info[iobj].object+'_'+info[iobj].filter+'.fits'
+             endif
+             if strmatch(type,'*dark*',/fold) or strmatch(type,'*bias*',/fold) then begin
+                if strmatch(type,'*dark*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'dark'
+                if strmatch(type,'*bias*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'bias'
+                outfile = 'Raw/'+night[inight]+'.'+sxpar(hdr,'imagetyp')+'.fits'
+             endif
+             if strmatch(type,'*flat*',/fold) then begin
+                sxaddpar, hdr, 'IMAGETYP', 'flat'
+                if (strtrim(info[iobj].filter,2) eq '') then message, 'Fix this!'
+                outfile = 'Raw/'+night[inight]+'.'+sxpar(hdr,'imagetyp')+'_'+info[iobj].filter+'.fits'
+             endif
+;; rename Barnard's star
+;             outfile = strcompress(repstr(repstr(repstr('Raw/'+$
+;               file_basename(allfiles[iobj]),'.gz',''),$
+;               '.fit','.fits'),'.FIT','.fits'),/remove)
+;             outfile = repstr('AutosaveImage','barnards')
              if file_test(outfile+'.gz') and (keyword_set(clobber) eq 0) then begin
                 splog, 'Output file '+outfile+' exists; use /CLOBBER'
              endif else begin
-                image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
-                sxaddpar, hdr, 'RA', repstr(strtrim(sxpar(hdr,'OBJCTRA'),2),' ',':')
-                sxaddpar, hdr, 'DEC', repstr(strtrim(sxpar(hdr,'OBJCTDEC'),2),' ',':')
-                sxaddpar, hdr, 'RDNOISE', 10.0, ' read noise [e]' ; approximate
-                sxaddpar, hdr, 'CCDSUM', strtrim(sxpar(hdr,'XBINNING'),2)+' '+$
-                  strtrim(sxpar(hdr,'YBINNING'),2)
-                sxaddpar, hdr, 'EQUINOX', '2000.0', ' equinox of coordinates'
-                date = sxpar(hdr,'DATE-OBS')
-                sxaddpar, hdr, 'DATE-OBS', strmid(date,0,10), ' UT date'
-                sxaddpar, hdr, 'UT', strmid(date,11,10), ' UT time'
-                type = strtrim(sxpar(hdr,'imagetyp'),2)
-                if strmatch(type,'*light*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'object'
-                if strmatch(type,'*dark*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'dark'
-                if strmatch(type,'*bias*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'bias'
-                if strmatch(type,'*flat*',/fold) then sxaddpar, hdr, 'IMAGETYP', 'flat'
                 im_mwrfits, image, outfile, hdr, /clobber
              endelse
           endfor
@@ -83,7 +102,7 @@ pro reduce_rcos20_2010, datapath, night=night, update_headers=update_headers, $
           aycamp_img_strct, allstruct, ccd=ccd, tel=tel, $
             outfil='all_'+structfile[inight], clobber=clobber
           case night[inight] of
-             'barnards': keep = where(allstruct.type ne 'DRK')
+             '16jun10': keep = where(allstruct.type ne 'DRK')
              else: message, 'Update me!'
           endcase
           struct = allstruct[keep]
