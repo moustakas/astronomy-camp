@@ -97,7 +97,6 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                 
 ; the area of the detector that was read out changed slightly over the
 ; course of the camp, so standardize that here
-                ntrim = 5
                 ccdsize = strcompress(sxpar(hdr,'CCDSIZE'),/rem)
                 datasec = strcompress(sxpar(hdr,'DATASEC'),/rem)
                 biassec = strcompress(sxpar(hdr,'BIASSEC'),/rem)
@@ -106,25 +105,22 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
                 data_arr = long(strsplit(datasec,'[*:*,*:*]',/extract))
                 ccd_arr = long(strsplit(ccdsize,'[*:*,*:*]',/extract))
-
-                splog, 'HACK!!!'
                 data_arr = [1,1200,1,124]
                 
                 bias_arr = long(strsplit(biassec,'[*:*,*:*]',/extract))
                 new_data_arr = '['+strtrim(data_arr[0],2)+':'+$
                   strtrim(data_arr[1],2)+','+strtrim(data_arr[2],2)+':'+$
-                  strtrim(data_arr[3]-ntrim,2)+']'
+                  strtrim(data_arr[3],2)+']'
                 new_bias_arr = '['+strtrim(bias_arr[0],2)+':'+$
                   strtrim(bias_arr[1],2)+','+strtrim(bias_arr[2],2)+':'+$
-                  strtrim(bias_arr[3]-ntrim,2)+']'
+                  strtrim(bias_arr[3],2)+']'
                 
                 sxaddpar, hdr, 'DATASEC', new_data_arr
                 sxaddpar, hdr, 'TRIMSEC', new_data_arr
                 sxaddpar, hdr, 'AMPSEC', new_data_arr
                 sxaddpar, hdr, 'BIASSEC', new_bias_arr
                 
-                aycamp_mwrfits, image[*,0:data_arr[3]-ntrim-1], outfile, hdr, /clobber
-;               aycamp_mwrfits, image, outfile, hdr, /clobber
+                aycamp_mwrfits, image[*,0:data_arr[3]-1], outfile, hdr, /clobber
              endelse
           endfor
        endif 
@@ -150,6 +146,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                (strmatch(new.filename,'*.0045.*') eq 0)) ; arc w/ wrong slit
              '23jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
+               (strmatch(new.filename,'*.0124.*') eq 0) and $
                (strmatch(new.filename,'*.005[4-7].*') eq 0))
              '24jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $

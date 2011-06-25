@@ -10,7 +10,7 @@ function aycamp_find_calspec, oldplan, radius=radius
     newplan = struct_addtags(oldplan,starinfo)
 
 ; read the calspec database info file
-    allstd = rsex(getenv('AYCAMP_DIR')+'/data/calspec_info.txt')
+    allstd = aycamp_rsex(getenv('AYCAMP_DIR')+'/data/calspec_info.txt')
 
 ; grab the coordinates of the standards from the header
     sci = where(strtrim(newplan.flavor,2) eq 'science',nsci)
@@ -19,8 +19,8 @@ function aycamp_find_calspec, oldplan, radius=radius
 ;   struct_print, struct_trimtags(info,sel=['object','ra','dec'])
     
 ; spherematch generously    
-    spherematch, 15.0*im_hms2dec(allstd.ra), im_hms2dec(allstd.dec), $
-      15.0*im_hms2dec(info.ra), im_hms2dec(info.dec), radius, $
+    spherematch, 15.0*hms2dec(allstd.ra), hms2dec(allstd.dec), $
+      15.0*hms2dec(info.ra), hms2dec(info.dec), radius, $
       m1, m2, max=0
     if (m2[0] ne -1) then begin
        newplan[sci[m2]].flavor = 'std'
