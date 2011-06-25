@@ -16,7 +16,7 @@
 ;   J. Moustakas, 2011 Jun 15, UCSD
 ;-
 
-pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
+pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, $
   unpack_projects=unpack_projects, fluxcal=fluxcal, clobber=clobber, $
   chk=chk, qaplot=qaplot
@@ -31,7 +31,7 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
 
     trim_wave = 10
     
-    if (n_elements(night) eq 0) then night = ['22jun11','23jun11']
+    if (n_elements(night) eq 0) then night = ['22jun11','23jun11','24jun11']
     nnight = n_elements(night)
 
     for inight = 0, nnight-1 do begin
@@ -56,10 +56,10 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
 ; reading the data in the "rawdata" directory, repair bad pixels,
 ; remove cosmic rays, clean up headers, and move the spectra to the
 ; "Raw" subdirectory for further processing 
-       if keyword_set(fixbadpix) then begin
-          splog, 'Reading '+badpixfile
-          readcol, badpixfile, x1, x2, y1, y2, comment='#', $
-            format='L,L,L,L', /silent
+       if keyword_set(preproc) then begin
+;         splog, 'Reading '+badpixfile
+;         readcol, badpixfile, x1, x2, y1, y2, comment='#', $
+;           format='L,L,L,L', /silent
           allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fits*',count=nspec)
           if (nspec eq 0) then begin
              splog, 'No files found in '+datapath+'rawdata/'
@@ -71,29 +71,41 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                 splog, 'Output file '+outfile+' exists; use /CLOBBER'
              endif else begin
                 image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
+; fix headers and bad pixels
                 sxaddpar, hdr, 'INSTRUME', 'bcspeclamps', ' instrument name'
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
-; fix headers and bad pixels
                 if strmatch(allfiles[iobj],'*22jun11.0045*',/fold) then $
                   sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*24jun11.0159*',/fold) then $
+                  sxaddpar, hdr, 'OBJECT', 'HZ44 4.5 slit'
+                if strmatch(allfiles[iobj],'*24jun11.0160*',/fold) then $
+                  sxaddpar, hdr, 'OBJECT', 'HZ44 2.5 slit'
+
                 type = sxpar(hdr,'imagetyp')
-                if (strlowcase(strtrim(type,2)) eq 'object') then begin
-                   dims = size(image,/dim)
-                   badpixmask = image*0.0
-                   for ipix = 0, n_elements(x1)-1 do $
-                     badpixmask[(x1[ipix]-1)>0:(x2[ipix]-1)<(dims[0]-1),$
-                     (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
-                   image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
-                endif
+
+;               if (strlowcase(strtrim(type,2)) eq 'object') then begin
+;                  dims = size(image,/dim)
+;                  badpixmask = image*0.0
+;                  for ipix = 0, n_elements(x1)-1 do $
+;                    badpixmask[(x1[ipix]-1)>0:(x2[ipix]-1)<(dims[0]-1),$
+;                    (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
+;                  image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
+;               endif
 
 ; splog, 'Reduce cosmic rays!!'                
                 
-; trim some pixels from the top
+; the area of the detector that was read out changed slightly over the
+; course of the camp, so standardize that here
                 ntrim = 5
+                ccdsize = strcompress(sxpar(hdr,'CCDSIZE'),/rem)
                 datasec = strcompress(sxpar(hdr,'DATASEC'),/rem)
                 biassec = strcompress(sxpar(hdr,'BIASSEC'),/rem)
+                ccdsum = strcompress(sxpar(hdr, 'CCDSUM'), /rem)
+                rowbin = fix(strmid(ccdsum,1,1))
+
                 data_arr = long(strsplit(datasec,'[*:*,*:*]',/extract))
+                ccd_arr = long(strsplit(ccdsize,'[*:*,*:*]',/extract))
 
                 splog, 'HACK!!!'
                 data_arr = [1,1200,1,124]
@@ -111,8 +123,8 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'AMPSEC', new_data_arr
                 sxaddpar, hdr, 'BIASSEC', new_bias_arr
                 
-                im_mwrfits, image[*,0:data_arr[3]-ntrim-1], outfile, hdr, /clobber
-;               im_mwrfits, image, outfile, hdr, /clobber
+                aycamp_mwrfits, image[*,0:data_arr[3]-ntrim-1], outfile, hdr, /clobber
+;               aycamp_mwrfits, image, outfile, hdr, /clobber
              endelse
           endfor
        endif 
@@ -139,6 +151,9 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
              '23jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
                (strmatch(new.filename,'*.005[4-7].*') eq 0))
+             '24jun11': keep = where($
+               (strmatch(new.filename,'*test*') eq 0) and $
+               (strmatch(new.filename,'*.0181.*') eq 0)) ; wrong slit
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -222,8 +237,8 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
           pushd, datapath+night[inight]
           infiles = file_search('Science/sci-*.fits*',count=nspec)
           info = aycamp_forage(infiles)
-          ra = 15D*im_hms2dec(info.ra)
-          dec = im_hms2dec(info.dec)
+          ra = 15D*hms2dec(info.ra)
+          dec = hms2dec(info.dec)
           obj = strcompress(info.object,/remove)
           allgrp = spheregroup(ra,dec,15/3600.0)
           grp = allgrp[uniq(allgrp,sort(allgrp))]
@@ -279,20 +294,20 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
 
 ; write out                   
              openw, lun, repstr(outfiles[iobj],'.fits','.txt'), /get_lun
-             niceprintf, lun, wave, flux, ferr
-;            niceprintf, lun, newwave, newflux, newferr
+             aycamp_niceprintf, lun, wave, flux, ferr
+;            aycamp_niceprintf, lun, newwave, newflux, newferr
              free_lun, lun
 
              spawn, 'gzip -f '+outfiles[iobj], /sh
           endfor
 
 ; build a QAplot for all the spectra from this night
-;         psfile = 'spec1d/qa_'+night[inight]+'.ps'
-;         im_plotconfig, 8, pos, psfile=psfile
+          psfile = 'spec1d/qa_'+night[inight]+'.ps'
+;         aycamp_plotconfig, 8, pos, psfile=psfile
           for iobj = 0, nspec-1 do begin
              obj = repstr(file_basename(outfiles[iobj]),'.fits','')
              psfile = 'spec1d/qa_'+obj+'.ps'
-             im_plotconfig, 8, pos, psfile=psfile
+             aycamp_plotconfig, 8, pos, psfile=psfile
              readcol, 'spec1d/'+obj+'.txt', wave, flux, ferr, /silent, format='F,F,F'
 ;            flux = mrdfits(outfiles[iobj]+'.gz',0,hdr,/silent)
 ;            ferr = mrdfits(outfiles[iobj]+'.gz',1,/silent)
@@ -302,106 +317,10 @@ pro reduce_bok_2011, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                position=pos, xtitle='Wavelength (\AA)', $
                ytitle='Flux (10^{-16} '+flam_units()+')'
              legend, obj, /right, /top, box=0
-             im_plotconfig, psfile=psfile, /psclose, /pdf
+             aycamp_plotconfig, psfile=psfile, /psclose, /pdf
           endfor
-;         im_plotconfig, psfile=psfile, /psclose, /gzip
+;         aycamp_plotconfig, psfile=psfile, /psclose, /gzip
        endfor
-    endif 
-
-    
-stop    
-    
-    
-;; ##################################################
-;; coadd multiple exposures of the same object and flux-calibrate 
-;;   push this to its own routine!
-;    if keyword_set(fluxcal) then begin
-;       for inight = 0, nnight-1 do begin
-;          planfile = datapath+night[inight]+'/plan_'+night[inight]+'.par'
-;          plan1 = yanny_readone(planfile)
-;          sci = where(strtrim(plan1.flavor,2) eq 'science')
-;          plan1 = plan1[sci]
-;          plan1.filename = datapath+night[inight]+'/Science/sci-'+strtrim(plan1.filename,2)
-;          if (inight eq 0) then plan = plan1 else $
-;            plan = [plan,plan1]
-;       endfor
-;
-;       infiles = strtrim(plan.filename,2)
-;       nspec = n_elements(infiles)
-;       for ii = 0, nspec-1 do begin
-;          suffix = strmid(repstr(file_basename(infiles[ii]),'.fits.gz',''),11,/reverse)
-;          obj = strcompress(sxpar(headfits(infiles[ii]),'object'),/remove)
-;          outfile = datapath+'spec1d/'+obj+'_'+suffix+'.fits'
-;          long_coadd, infiles[ii], 1, outfil=outfile
-;       endfor
-;
-;; now read the files back in, flux-calibrate, trim crap pixels from
-;; each end and convert to standard FITS format 
-;       trim = 10
-;       infiles = file_search(datapath+'spec1d/*.fits',count=nspec)
-;       outfiles = infiles
-;       for iobj = 0, nspec-1 do begin
-;          long_fluxcal, infiles[iobj], sensfunc=sensfuncfile, $
-;            outfil=outfiles[iobj]
-;; trim etc
-;          flux = mrdfits(outfiles[iobj],0,hdr,/silent)
-;          ferr = mrdfits(outfiles[iobj],1,/silent)
-;          wave = mrdfits(outfiles[iobj],2,/silent)
-;          npix = n_elements(wave)
-;          flux = 1E-17*flux[trim:npix-trim-1]
-;          ferr = 1E-17*ferr[trim:npix-trim-1]
-;          wave = wave[trim:npix-trim-1]
-;          npix = n_elements(wave)
-;; interpolate over pixels affected by strong sky lines
-;          mask = ((wave gt 5547.0) and (wave lt 5580.0)) or $
-;            ((wave gt 6280.0) and (wave lt 6307.0)) or $
-;            ((wave gt 6345.0) and (wave lt 6368.0))
-;          flux = djs_maskinterp(flux,mask,wave,/const)
-;; rebin linearly in wavelength
-;          dwave = ceil(100D*(max(wave)-min(wave))/(npix-1))/100D
-;          newwave = dindgen((max(wave)-min(wave))/dwave+1)*dwave+min(wave)
-;          newflux = rebin_spectrum(flux,wave,newwave)
-;          newvar = rebin_spectrum(ferr^2,wave,newwave)
-;          newferr = sqrt(newvar*(newvar gt 0.0)) ; enforce positivity
-;; build the final header; also grab the redshift from NED
-;          sxaddpar, hdr, 'CRVAL1', min(wave), ' wavelength at CRPIX1'
-;          sxaddpar, hdr, 'CRPIX1', 1D, ' reference pixel number'
-;          sxaddpar, hdr, 'CD1_1', dwave, ' dispersion [Angstrom/pixel]'
-;          sxaddpar, hdr, 'CDELT1', dwave, ' dispersion [Angstrom/pixel]'
-;          sxaddpar, hdr, 'CTYPE1', 'LINEAR', ' projection type'
-;          
-;          mwrfits, float(newflux), outfiles[iobj], hdr, /create
-;          mwrfits, float(newferr), outfiles[iobj], hdr
-;          spawn, 'gzip -f '+outfiles[iobj], /sh
-;       endfor
-;    endif
-
-    if keyword_set(qaplot) then begin
-       outfiles = file_search(datapath+'spec1d/*.fits.gz',count=nspec)
-; make a QAplot of everything       
-       psfile = datapath+'spec1d/qa_all.ps'
-       im_plotconfig, 8, pos, psfile=psfile
-       for iobj = 0, nspec-1 do begin
-          flux = mrdfits(outfiles[iobj],0,hdr,/silent)
-          ferr = mrdfits(outfiles[iobj],1,/silent)
-          wave = make_wave(hdr)
-          obj = sxpar(hdr,'object')
-
-          power = ceil(abs(alog10(median(flux))))
-          scale = 10.0^power
-          ytitle = 'Flux (10^{-'+string(power,format='(I0)')+'} '+flam_units()+')'
-
-          stats = im_stats(flux,sigrej=20.0)
-          if strmatch(obj,'*4593*',/fold) then $
-            yrange = [stats.min,1.2*stats.maxrej] else $
-              yrange = [stats.min,1.1*stats.max]
-
-          djs_plot, wave, scale*flux, xsty=3, ysty=3, ps=10, $
-            position=pos, xtitle='Wavelength (\AA)', $
-            ytitle=ytitle, yrange=scale*yrange
-          legend, [obj], /right, /top, box=0
-       endfor
-       im_plotconfig, psfile=psfile, /psclose, /gzip
     endif 
 
 return

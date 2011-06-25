@@ -10,6 +10,8 @@ pro select_cvs_2011
       (allcat.mag1 lt 15),nobj)
     cat = allcat[keep]
     cat = cat[sort(cat._raj2000)]
+    
+    
 
     djs_plot, cat._raj2000, cat._dej2000, psym=6, xsty=3, ysty=3, sym=3
     im_plothist, cat.orb_per*24, bin=0.5 
