@@ -43,7 +43,7 @@ function aycamp_empty_structure, oldstruct, ncopies=ncopies, $
         if size(newstruct.(itag),/tname) eq 'STRING' then $
           newstruct.(itag) = empty_string
     
-    newstruct = im_struct_trimtags(newstruct,_extra=extra)
+    newstruct = aycamp_struct_trimtags(newstruct,_extra=extra)
     if (n_elements(ncopies) ne 0) then begin
        if (ncopies gt 1) then newstruct = replicate(newstruct,ncopies)
     endif
