@@ -18,10 +18,26 @@ function aycamp_find_calspec, oldplan, radius=radius
     info = aycamp_forage('Raw/'+strtrim(newplan[sci].filename,2))
 ;   struct_print, struct_trimtags(info,sel=['object','ra','dec'])
     
-; spherematch generously    
-    spherematch, 15.0*hms2dec(allstd.ra), hms2dec(allstd.dec), $
-      15.0*hms2dec(info.ra), hms2dec(info.dec), radius, $
-      m1, m2, max=0
+; spherematch generously
+    delvarx, m1, m2
+    for ii = 0, n_elements(info)-1 do begin
+       srcor, 15D*hms2dec(allstd.ra), hms2dec(allstd.dec), $
+         15D*hms2dec(info[ii].ra), hms2dec(info[ii].dec), radius*3600.0, $
+         m11, m21, /silent, spherical=2
+       if (m11[0] ne -1) then begin
+          if (n_elements(m1) eq 0) then begin
+             m1 = m11
+             m2 = ii
+          endif else begin
+             m1 = [m1,m11]
+             m2 = [m2,ii]
+          endelse
+       endif 
+    endfor
+    
+;   spherematch, 15.0*hms2dec(allstd.ra), hms2dec(allstd.dec), $
+;     15.0*hms2dec(info.ra), hms2dec(info.dec), radius, $
+;     m1, m2, max=0
     if (m2[0] ne -1) then begin
        newplan[sci[m2]].flavor = 'std'
        newplan[sci[m2]].starfile = repstr(allstd[m1].file,'.fits.gz','')
