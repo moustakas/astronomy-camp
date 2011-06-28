@@ -16,6 +16,8 @@
 ;   J. Moustakas, 2011 Jun 15, UCSD
 ;-
 
+; long_setflex, 'Science/sci-23jun11.0092.fits.gz', 'bok_sky_bcs_400.sav'
+
 pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, $
   unpack_projects=unpack_projects, fluxcal=fluxcal, clobber=clobber, $
@@ -29,9 +31,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
     sensfuncfile = datapath+'sensfunc_2011.fits'
 
-    trim_wave = 10
-    
-    if (n_elements(night) eq 0) then night = ['22jun11','23jun11','24jun11']
+    if (n_elements(night) eq 0) then night = ['22jun11','23jun11','24jun11','27jun11']
     nnight = n_elements(night)
 
     for inight = 0, nnight-1 do begin
@@ -48,18 +48,19 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
        if (file_test('Science',/dir) eq 0) then $
          spawn, 'mkdir '+'Science', /sh
 
-;      sensfuncfile = 'sensfunc_'+night[inight]+'.fits'
+;      sensfuncfile = datapath+'sensfunc_'+night[inight]+'.fits'
        planfile = 'plan_'+night[inight]+'.par'
        calibplanfile = 'plan_calib_'+night[inight]+'.par'
 
 ; ##################################################
-; reading the data in the "rawdata" directory, repair bad pixels,
-; remove cosmic rays, clean up headers, and move the spectra to the
-; "Raw" subdirectory for further processing 
+; read the data in the "rawdata" directory, repair bad pixels, remove
+; cosmic rays, clean up headers, and move the spectra to the "Raw"
+; subdirectory for further processing
        if keyword_set(preproc) then begin
-;         splog, 'Reading '+badpixfile
-;         readcol, badpixfile, x1, x2, y1, y2, comment='#', $
-;           format='L,L,L,L', /silent
+          splog, 'Reading '+badpixfile
+          readcol, badpixfile, x1, x2, y1, y2, comment='#', $
+            format='L,L,L,L', /silent
+
           allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fits*',count=nspec)
           if (nspec eq 0) then begin
              splog, 'No files found in '+datapath+'rawdata/'
@@ -71,30 +72,47 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                 splog, 'Output file '+outfile+' exists; use /CLOBBER'
              endif else begin
                 image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
-; fix headers and bad pixels
+
                 sxaddpar, hdr, 'INSTRUME', 'bcspeclamps', ' instrument name'
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
-                if strmatch(allfiles[iobj],'*22jun11.0045*',/fold) then $
-                  sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*24jun11.0159*',/fold) then $
-                  sxaddpar, hdr, 'OBJECT', 'HZ44 4.5 slit'
-                if strmatch(allfiles[iobj],'*24jun11.0160*',/fold) then $
-                  sxaddpar, hdr, 'OBJECT', 'HZ44 2.5 slit'
 
+                if strmatch(allfiles[iobj],'*22jun11.004[5-6].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*22jun11.0052.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+
+                if strmatch(allfiles[iobj],'*23jun11.008[3-4].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*23jun11.0095.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*23jun11.0109.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+
+                if strmatch(allfiles[iobj],'*24jun11.0159*',/fold) then begin
+                   sxaddpar, hdr, 'OBJECT', 'HZ44 4.5 slit'
+                   sxaddpar, hdr, 'APERTURE', '4.5'
+                endif
+                if strmatch(allfiles[iobj],'*24jun11.0160*',/fold) then sxaddpar, hdr, 'OBJECT', 'HZ44 2.5 slit'
+                if strmatch(allfiles[iobj],'*24jun11.0180.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*24jun11.0181.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+
+                if strmatch(allfiles[iobj],'*27jun11.0223.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*27jun11.0244.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*27jun11.025[2-3].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                
                 type = sxpar(hdr,'imagetyp')
-
-;               if (strlowcase(strtrim(type,2)) eq 'object') then begin
-;                  dims = size(image,/dim)
-;                  badpixmask = image*0.0
-;                  for ipix = 0, n_elements(x1)-1 do $
-;                    badpixmask[(x1[ipix]-1)>0:(x2[ipix]-1)<(dims[0]-1),$
-;                    (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
-;                  image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
+                if (strlowcase(strtrim(type,2)) eq 'object') then begin
+                   dims = size(image,/dim)
+                   badpixmask = image*0.0
+                   for ipix = 0, n_elements(x1)-1 do $
+                     badpixmask[(x1[ipix]-1)>0:(x2[ipix]-1)<(dims[0]-1),$
+                     (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
+                   image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
+                endif
+;               exp = sxpar(hdr,'exptime')
+;               if (strlowcase(strtrim(type,2)) eq 'object') and (exp gt 300.0) then begin
+;                  splog, 'Identifying cosmic rays '
+;                  aycamp_la_cosmic, image, gain=-1.0, readn=0.0, $
+;                    outlist=newim, sigclip=5.0
+;                  image = newim
 ;               endif
 
-; splog, 'Reduce cosmic rays!!'                
-                
 ; the area of the detector that was read out changed slightly over the
 ; course of the camp, so standardize that here
                 ccdsize = strcompress(sxpar(hdr,'CCDSIZE'),/rem)
@@ -134,7 +152,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
              continue
           endif
           long_plan, '*.fits.gz', 'Raw/', planfile=planfile
-          old = yanny_readone(planfile,hdr=hdr)
+          old = yanny_readone(planfile,hdr=hdr,/anony)
           new = aycamp_find_calspec(old,radius=radius)
           twi = where(strmatch(new.target,'*skyflat*'),ntwi)
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
@@ -146,11 +164,13 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                (strmatch(new.filename,'*.0045.*') eq 0)) ; arc w/ wrong slit
              '23jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
-               (strmatch(new.filename,'*.0124.*') eq 0) and $
-               (strmatch(new.filename,'*.005[4-7].*') eq 0))
+               (strmatch(new.filename,'*.005[4-7].*') eq 0)) ; focus exposures
              '24jun11': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $
+               (strmatch(new.filename,'*.0168.*') eq 0) and $ ; Cat's Eye saturated!
                (strmatch(new.filename,'*.0181.*') eq 0)) ; wrong slit
+             '27jun11': keep = where($
+               (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -159,8 +179,8 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; parameter defaults
           hdr = hdr[where(strcompress(hdr,/remove) ne '')]
           maxobj = where(strmatch(hdr,'*maxobj*'))
-          hdr[maxobj] = 'maxobj 1'
-          hdr = [hdr,'nozap 1','nohelio 1','noflex 1','novac 1','skytrace 0']
+          hdr[maxobj] = 'maxobj 3'
+          hdr = [hdr,'nozap 1','nohelio 1','noflex 0','novac 1','skytrace 0']
 
           yanny_write, planfile, ptr_new(new), hdr=hdr, /align
           write_calib_planfile, planfile, calibplanfile
@@ -175,16 +195,10 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; ##################################################
 ; reduce and extract the standards, if any
        if keyword_set(standards) then begin
-          long_reduce, calibplanfile, /juststd, sciclobber=clobber, niter=3
+          long_reduce, calibplanfile, /juststd, sciclobber=clobber
        endif
+    endfor
 
-; ##################################################
-; reduce the objects
-       if keyword_set(science) then begin
-          long_reduce, planfile, sciclobber=clobber, /justsci, chk=chk, /nolocal
-       endif
-    endfor 
-       
 ; ##################################################
 ; build the sensitivity function from all the nights 
 ;   push this to its own routine!
@@ -202,37 +216,92 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                stdplan = [stdplan,stdplan1]
           endif else splog, 'No standard stars observed on night '+night[inight]+'!'
        endfor
-       if (n_elements(stdplan) ne 0) then begin
-          struct_print, stdplan
+       if (n_elements(stdplan) eq 0) then splog, 'No standard stars observed!' else begin
 ;         keep = lindgen(n_elements(stdplan))
           keep = where($
-            (strmatch(stdplan.filename,'*22jun11.0051*',/fold) eq 0) and $
+            (stdplan.maskname eq 4.5) and $
             (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*22jun11.0044*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*23jun11.0085*',/fold) eq 0))
+            (strmatch(stdplan.filename,'*23jun11.0095*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*27jun11.0244*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*27jun11.025[2-3]*',/fold) eq 0) and $
+            (strmatch(stdplan.filename,'*23jun11.0109*',/fold) eq 0))
           stdplan = stdplan[keep]
+          struct_print, stdplan
           nstd = n_elements(stdplan)
           splog, 'Building '+sensfuncfile+' from '+string(nstd,format='(I0)')+' standards'
-          stdfiles = strtrim(stdplan.filename,2)
-          std_names = strtrim(stdplan.starfile,2)
+          
+          aycamp_sensfunc, strtrim(stdplan.filename,2), strtrim(stdplan.starfile,2), $
+            nogrey=0, sensfuncfile=sensfuncfile
+       endelse
+    endif
 
-; do the fit, masking the bluest and reddest pixels
-          ncol = 1200 & nmask = 10
-          inmask = intarr(ncol)+1
-          inmask[0:nmask-1] = 0
-          inmask[ncol-nmask-1:ncol-1] = 0
-          sens = long_sensfunc(stdfiles,sensfuncfile,sensfit=sensfit,$
-            std_name=std_names,wave=wave,flux=flux,nogrey=1,inmask=inmask,$
-            /msk_balm)
-       endif else splog, 'No standard stars observed!'
+; ##################################################
+; reduce the objects
+    if keyword_set(science) then begin
+       for inight = 0, nnight-1 do begin
+;         planfile = 'testplan_24jun11.par'
+          planfile = datapath+night[inight]+'/plan_'+night[inight]+'.par'
+          handfile = datapath+night[inight]+'/handextract_24jun11.par'
+
+          if file_test(handfile) then begin
+; update the plan file
+             hand = yanny_readone(handfile,/anonymous)
+             newplanfile = repstr(planfile,'plan_','newplan_')
+             old = yanny_readone(planfile,hdr=hdr,/anonymous)
+             match, strtrim(old.filename,2), strtrim(hand.filename,2), m1, m2
+             keep = lindgen(n_elements(old))
+             remove, m1, keep
+             new = old[keep]
+             yanny_write, newplanfile, ptr_new(new), hdr=hdr, /align
+             
+             delvarx, box_rad, hand_fwhm, hand_x, hand_y
+             for ii = 0, n_elements(hand)-1 do begin
+                scifile = repstr(strtrim(hand[ii].filename,2),'.gz','')
+
+                if (hand[ii].box_rad gt 0.0) then box_rad = hand[ii].box_rad
+                gdhand = where(hand[ii].hand_fwhm gt 0.0,ngdhand)
+                if (ngdhand gt 0) then begin
+                   hand_fwhm = hand[ii].hand_fwhm[gdhand]
+                   hand_x = hand[ii].hand_x[gdhand]
+                   hand_y = hand[ii].hand_y[gdhand]
+                endif
+
+; do the "by hand" extractions first, if any
+                long_reduce, planfile, sciclobber=clobber, /justsci, $
+                  /nolocal, onlysci=scifile, hand_fwhm=hand_fwhm, $
+                  hand_x=hand_x, hand_y=hand_y, box_rad=box_rad, chk=chk
+
+; now do the usual extractions
+                long_reduce, newplanfile, sciclobber=clobber, /justsci, chk=chk, /nolocal
+                
+             endfor
+          endif else begin
+; no hand-extract file
+             long_reduce, planfile, sciclobber=clobber, /justsci, chk=chk, /nolocal
+;            long_reduce, datapath+night[inight]+'/snplan_'+night[inight]+'.par', $
+;              sciclobber=clobber, /justsci, chk=chk, maxobj=3
+          endelse
+       endfor
     endif
 
 ; ##################################################
 ;   push this to its own routine!
     if keyword_set(fluxcal) then begin
+       trim_wave = 10
        for inight = 0, nnight-1 do begin
           pushd, datapath+night[inight]
           infiles = file_search('Science/sci-*.fits*',count=nspec)
+; write out the final 1D spectrum          
+          for ii = 0, nspec-1 do begin
+             outfile = 'Fspec/'+obj[these[0]]+'.fits'
+             skyfile = 'Fspec/'+obj[these[0]]+'.sky.fits'
+             long_coadd, infiles[these], 1, wave=wave, flux=flux, $
+               ivar=ivar, outfil=outfile, skyfil=skyfile, $
+               /medscale, box=0, check=0;, sigrej=30.0; check
+          endfor
+
+          
+
           info = aycamp_forage(infiles)
           ra = 15D*hms2dec(info.ra)
           dec = hms2dec(info.dec)

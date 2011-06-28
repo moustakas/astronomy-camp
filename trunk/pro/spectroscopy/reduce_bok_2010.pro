@@ -62,6 +62,7 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
           splog, 'Reading '+badpixfile
           readcol, badpixfile, x1, x2, y1, y2, comment='#', $
             format='L,L,L,L', /silent
+
           allfiles = file_search('rawdata/*.fits*',count=nspec)
           if (nspec eq 0) then begin
              splog, 'No files found in '+'rawdata/'
@@ -80,6 +81,7 @@ pro reduce_bok_2010, night, fixbadpix=fixbadpix, plan=plan, calib=calib, $
                 if strmatch(allfiles[iobj],'*18Jun10_0050*',/fold) then $
                   sxaddpar, hdr, 'OBJECT', 'VeilNebula No.3'
                 type = sxpar(hdr,'imagetyp')
+
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
                    dims = size(image,/dim)
                    badpixmask = image*0.0
