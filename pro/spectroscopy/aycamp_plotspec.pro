@@ -18,6 +18,7 @@ pro aycamp_plotspec, file, nsmooth=nsmooth, overplot=overplot, _extra=extra, $
     flux = mrdfits(file,0,hdr)
     wave = aycamp_make_wave(hdr)
 
+; do a very very very generic continuum-subtraction    
     if keyword_set(baseline) then begin
        get_element, wave, xrange, xx
        flux = flux-djs_median(flux[xx[0]:xx[1]])
