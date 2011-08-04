@@ -27,7 +27,9 @@
 
 pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, chk=chk, $
-  unpack_wise=unpack_wise, unpack_sne=unpack_sne, unpack_ngc4559=unpack_ngc4559, $
+  unpack_wise=unpack_wise, unpack_sne=unpack_sne, unpack_vyaqr=unpack_vyaqr, $
+  unpack_ngc4559=unpack_ngc4559, unpack_lenticulars=unpack_lenticulars, $
+  unpack_pne=unpack_pne, unpack_rotationcurve=unpack_rotationcurve, $
   clobber=clobber
 
     datapath = getenv('AYCAMP_DATA')+'2011/bok/'
@@ -283,8 +285,8 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
           hand = yanny_readone(handfile,/anonymous)
 
           delvarx, hand_fwhm, hand_x, hand_y
-;         for ii = 14, 18 do begin
-          for ii = 0, n_elements(hand)-1 do begin
+          for ii = 2, 3 do begin
+;         for ii = 0, n_elements(hand)-1 do begin
              scifile = repstr(strtrim(hand[ii].filename,2),'.gz','')
              
              gdhand = where(hand[ii].hand_fwhm gt 0.0,ngdhand)
@@ -401,7 +403,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
        for jj = 0, nap-1 do begin
           coadd_outfile = outpath+obj+'_aper'+string(jj+1,format='(I0)')+'.fits'
           long_coadd, info.file, jj+1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0;, /norej, /nosharp
+            box=0, check=0, /norej;, /nosharp
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
@@ -410,136 +412,130 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
             objname=obj+'_aper'+string(jj+1,format='(I0)')
        endfor
     endif
+
+; -------------------------
+; Vy Aqr cataclysmic variable project
+    if keyword_set(unpack_vyaqr) then begin
+       outpath = projectpath+'vyaqr/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+; one set of back-to-back observations of this object
+       info = allinfo[where(strmatch(strcompress(allinfo.object,/remove),'*vyaqr*',/fold),nobj)]
+       obj = 'VyAqr'
+       
+       for jj = 0, nobj-1 do begin
+          coadd_outfile = outpath+obj+'_spec'+string(jj+1,format='(I2.2)')+'.fits'
+          long_coadd, info.file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej;, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, $
+            objname=obj+'_spec'+string(jj+1,format='(I0)')
+       endfor
+    endif
     
-stop    
-    
+; -------------------------
+; lenticular bars vs no bars project
+    if keyword_set(unpack_lenticulars) then begin
+       outpath = projectpath+'lenticulars/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+       info = allinfo[where($
+         strmatch(allinfo.object,'*5273*',/fold) or $
+         strmatch(allinfo.object,'*5195*',/fold) or $
+         strmatch(allinfo.object,'*5353*',/fold) or $
+         strmatch(allinfo.object,'*5710*',/fold) or $
+         strmatch(allinfo.object,'*5354*',/fold) or $
+         strmatch(allinfo.object,'*5864*',/fold) or $
+         strmatch(allinfo.object,'*102*',/fold) or $
+         strmatch(allinfo.object,'*5485*',/fold) or $
+         strmatch(allinfo.object,'*6548*',/fold) or $
+         strmatch(allinfo.object,'*6654*',/fold))]
+       obj = strcompress(info.object,/remove)
+       aycamp_niceprint, info.file, obj
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; planetary nebulae
+    if keyword_set(unpack_pne) then begin
+       outpath = projectpath+'pne/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+       info = allinfo[where($
+         strmatch(allinfo.object,'*egg*',/fold) or $
+         strmatch(allinfo.object,'*6058*',/fold) or $
+         strmatch(allinfo.object,'*ring*',/fold) or $
+         strmatch(allinfo.object,'*dumb*',/fold) or $
+         strmatch(allinfo.object,'*omega*',/fold) or $
+         strmatch(allinfo.object,'*cat*',/fold))]
+       obj = strcompress(info.object,/remove)
+;      aycamp_niceprint, info.file, obj, info.ra, info.dec
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),30D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=1, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; rotation curve project with NGC3448 - incomplete reductions!!
+    if keyword_set(unpack_rotationcurve) then begin
+       outpath = projectpath+'rotationcurve/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+       info = allinfo[where($
+         strmatch(allinfo.object,'*3448*',/fold) or $
+         strmatch(allinfo.object,'*4100*',/fold) or $
+         strmatch(allinfo.object,'*4565*',/fold))]
+       obj = ['NGC4565','NGC4565','NGC4565_dustlane','NGC3448',$
+         'NGC3448','NGC4100','NGC4100']
+;      aycamp_niceprint, info.file, info.object, obj
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),10D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=1, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
 return
 end
-
-
-;       finalfile = datapath+'final_extractfile.par'
-;; this code block should be run once and then edited by hand!
-;       for inight = 0, nnight-1 do begin
-;          infiles1 = file_search(datapath+night[inight]+'/Science/sci-*.fits*')
-;          info = aycamp_forage(infiles1)
-;          if (inight eq 0) then begin
-;             infiles = infiles1
-;             obj = strcompress(info.object,/remove)
-;          endif else begin
-;             infiles = [infiles,infiles1]
-;             obj = [obj,strcompress(info.object,/remove)]
-;          endelse
-;       endfor
-;       openw, lun, finalfile, /get_lun
-;       printf, lun, 'typedef, struct {'
-;       printf, lun, ' char file[];'
-;       printf, lun, ' char object[];'
-;       free_lun, lun
-       
-
-
-;;; ##################################################
-;;; extract the final spectra and flux-calibrate; need a file indicating
-;;; whether the extraction should be a box-car or optimal extraction
-;;    if keyword_set(fluxcal) then begin
-;;       trim_wave = 10
-;;       for inight = 0, nnight-1 do begin
-;;          pushd, datapath+night[inight]
-;;          if (keyword_set(clobber) eq 0) then begin
-;;             splog, 'Need to set /CLOBBER!'
-;;             continue
-;;          endif else begin
-;;             rmfile, file_search(datapath+night[inight]+'/Fspec/*.fits*')
-;;             rmfile, file_search(datapath+night[inight]+'/spec1d/*.fits*')
-;;             rmfile, file_search(datapath+night[inight]+'/spec1d/*.txt')
-;;             rmfile, file_search(datapath+night[inight]+'/spec1d/qa_*.p*')
-;;          endelse
-;;
-;;          infiles = file_search('Science/sci-*.fits*',count=nspec)
-;;          nspec = n_elements(infiles)
-;;          
-;;          info = aycamp_forage(infiles)
-;;          obj = strcompress(info.object,/remove)
-;;          suffix = repstr(repstr(file_basename(infiles),'sci-',''),'.fits.gz','')
-;;; write out the final 1D spectrum          
-;;          for ii = 0, nspec-1 do begin
-;;             nspec = n_elements(mrdfits(infiles[ii],5,/silent))
-;;             for jj = 0, nspec-1 do begin
-;;                outfile = 'Fspec/'+obj[ii]+'_'+suffix[ii]+'_aper'+strtrim(jj+1,2)+'.fits'
-;;                long_coadd, infiles[ii], jj+1, wave=wave, flux=flux, $
-;;                  ivar=ivar, outfil=outfile, /medscale, /box, check=0
-;;             endfor
-;;          endfor
-;;
-;;; flux-calibrate, trim crap pixels from each end and convert to
-;;; standard FITS format
-;;          infiles = file_search('Fspec/*.fits*',count=nspec)
-;;          nosky = where(strmatch(infiles,'*sky*',/fold) eq 0,nspec)
-;;          infiles = infiles[nosky]
-;;          outfiles = 'spec1d/'+file_basename(infiles)
-;;
-;;          for iobj = 0, nspec-1 do begin
-;;             long_fluxcal, infiles[iobj], sensfunc=sensfuncfile, $
-;;               outfil=outfiles[iobj]
-;;; trim, etc.
-;;             flux = mrdfits(outfiles[iobj],0,hdr,/silent)
-;;             ferr = mrdfits(outfiles[iobj],1,/silent)
-;;             wave = mrdfits(outfiles[iobj],2,/silent)
-;;             npix = n_elements(wave)
-;;             flux = 1E-17*flux[trim_wave:npix-trim_wave-1]
-;;             ferr = 1E-17*ferr[trim_wave:npix-trim_wave-1]
-;;             wave = wave[trim_wave:npix-trim_wave-1]
-;;             npix = n_elements(wave)
-;;
-;;;; interpolate over pixels affected by strong sky lines
-;;;             mask = ((wave gt 5545.0) and (wave lt 5595.0)) or $
-;;;               ((wave gt 6280.0) and (wave lt 6307.0)) or $
-;;;               ((wave gt 6345.0) and (wave lt 6368.0))
-;;;             flux = djs_maskinterp(flux,mask,wave,/const)
-;;; rebin linearly in wavelength
-;;             dwave = ceil(100D*(max(wave)-min(wave))/(npix-1))/100D
-;;             newwave = dindgen((max(wave)-min(wave))/dwave+1)*dwave+min(wave)
-;;             newflux = rebin_spectrum(flux,wave,newwave)
-;;             newvar = rebin_spectrum(ferr^2,wave,newwave)
-;;             newferr = sqrt(newvar*(newvar gt 0.0)) ; enforce positivity
-;;
-;;; build the final header; also grab the redshift from NED
-;;             sxaddpar, hdr, 'CRVAL1', min(newwave), ' wavelength at CRPIX1'
-;;             sxaddpar, hdr, 'CRPIX1', 1D, ' reference pixel number'
-;;             sxaddpar, hdr, 'CD1_1', dwave, ' dispersion [Angstrom/pixel]'
-;;             sxaddpar, hdr, 'CDELT1', dwave, ' dispersion [Angstrom/pixel]'
-;;             sxaddpar, hdr, 'CTYPE1', 'LINEAR', ' projection type'
-;;             mwrfits, float(newflux), outfiles[iobj], hdr, /create
-;;             mwrfits, float(newferr), outfiles[iobj], hdr
-;;;            spawn, 'gzip -f '+outfiles[iobj], /sh
-;;
-;;; write out                   
-;;;            openw, lun, repstr(outfiles[iobj],'.fits','.txt'), /get_lun
-;;;            aycamp_niceprintf, lun, wave, flux, ferr
-;;;            aycamp_niceprintf, lun, newwave, newflux, newferr
-;;;            free_lun, lun
-;;          endfor
-;;
-;;;; build a QAplot for all the spectra from this night
-;;;          psfile = 'spec1d/qa_'+night[inight]+'.ps'
-;;;;         aycamp_plotconfig, 8, pos, psfile=psfile
-;;;          for iobj = 0, nspec-1 do begin
-;;;             obj = repstr(file_basename(outfiles[iobj]),'.fits','')
-;;;             psfile = 'spec1d/qa_'+obj+'.ps'
-;;;             aycamp_plotconfig, 8, pos, psfile=psfile
-;;;;            readcol, 'spec1d/'+obj+'.txt', wave, flux, ferr, /silent, format='F,F,F'
-;;;             flux = mrdfits(outfiles[iobj]+'.gz',0,hdr,/silent)
-;;;             ferr = mrdfits(outfiles[iobj]+'.gz',1,/silent)
-;;;             wave = make_wave(hdr)
-;;;stop
-;;;;            obj = sxpar(hdr,'object')
-;;;             djs_plot, wave, 1D16*flux, xsty=3, ysty=3, ps=10, $
-;;;               position=pos, xtitle='Wavelength (\AA)', $
-;;;               ytitle='Flux (10^{-16} '+flam_units()+')'
-;;;             legend, obj, /right, /top, box=0
-;;;             aycamp_plotconfig, psfile=psfile, /psclose, /pdf
-;;;          endfor
-;;;         aycamp_plotconfig, psfile=psfile, /psclose, /gzip
-;;       endfor
-;;    endif 
-;;

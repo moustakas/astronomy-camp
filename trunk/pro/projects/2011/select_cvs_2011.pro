@@ -1,7 +1,7 @@
 pro select_cvs_2011
 ; jm11jun15ucsd - select some candidate CVs for camp/2011
 
-    path = getenv('AYCAMP_DATA')+'/2011/projects/cvs/'
+    path = getenv('AYCAMP_DATA')+'/2011/bok/projects/vyaqr/'
     
     allcat = mrdfits(getenv('CATALOGS_DIR')+'/cataclysmics/catalog_of_cvs.fits.gz',1)
     keep = where((allcat.orb_per gt 0.0) and (allcat.orb_per*24 lt 4.0) and $
@@ -19,8 +19,6 @@ pro select_cvs_2011
       obj=textoidl(cat.name+' (P='+strtrim(string(cat.orb_per*24,$
       format='(F12.1)'),2)+'^{h})'), psname=path+'select_cvs.ps', /bigpost
     
-stop    
-
 return
 end
     

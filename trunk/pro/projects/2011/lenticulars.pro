@@ -1,64 +1,13 @@
-function readspec, galaxy, wave=wave
-
-    datapath = getenv('AYCAMP_DATA')+'2011/bok/'
-    case galaxy of
-       'M102': begin
-          date = '28jun11'
-          file = 'M102_28jun11.0306_aper1.fits'
-       end
-       'NGC5485': begin
-          date = '28jun11'
-          file = 'NGC5485_28jun11.0302_aper1.fits'
-       end
-       'NGC6548': begin
-          date = '28jun11'
-          file = 'NGC6548_28jun11.0304_aper1.fits'
-       end
-       'NGC5354': begin
-          date = '28jun11'
-          file = 'NGC5354_28jun11.0298_aper1.fits'          
-       end
-       'NGC5864': begin
-          date = '28jun11'
-          file = 'NGC5864_28jun11.0300_aper1.fits'         
-       end
-       'NGC6654': begin
-          date = '28jun11'
-          file = 'NGC6654_28jun11.0308_aper1.fits'
-       end
-       'NGC5195': begin
-          date = '27jun11'
-          file = 'NGC5195_27jun11.0229_aper1.fits'
-       end
-       'NGC5273': begin
-          date = '27jun11'
-          file = 'NGC5273_27jun11.0227_aper1.fits'
-       end
-       'NGC5353': begin
-          date = '27jun11'
-          file = 'NGC5353_27jun11.0231_aper1.fits'
-       end
-       'NGC5710': begin
-          date = '27jun11'
-          file = 'NGC5710_27jun11.0233_aper1.fits'
-       end
-    endcase
-
-    flux = mrdfits(datapath+date+'/spec1d/'+file,0,hdr)
-    wave = make_wave(hdr)
-       
-return, flux
-end
-
 pro lenticulars
-
-    datapath = getenv('AYCAMP_DATA')+'2011/projects/lenticulars/'
+; jm11aug04ucsd - build some plots for the lenticulars project
+    
+    datapath = getenv('AYCAMP_DATA')+'2011/bok/projects/lenticulars/'
 
 ; --------------------------------------------------    
 ; no bar    
-    flux1_nobar = aycamp_readspec(datapath+'NGC5353_27jun11.0231_aper1.fits',wave=wave1_nobar)
-    flux2_nobar = aycamp_readspec(datapath+'NGC5485_28jun11.0302_aper1.fits',wave=wave2_nobar)
-    flux3_nobar = aycamp_readspec(datapath+'NGC5354_28jun11.0298_aper1.fits',wave=wave3_nobar)
+    flux1_nobar = aycamp_readspec(datapath+'NGC5353_f.fits',wave=wave1_nobar)
+    flux2_nobar = aycamp_readspec(datapath+'NGC5485_f.fits',wave=wave2_nobar)
+    flux3_nobar = aycamp_readspec(datapath+'NGC5354_f.fits',wave=wave3_nobar)
 
     wave1_nobar = wave1_nobar/(1+0.007755)
     wave2_nobar = wave2_nobar/(1+0.006671)
@@ -76,9 +25,9 @@ pro lenticulars
 
 ; --------------------------------------------------    
 ; bar    
-    flux1_bar = aycamp_readspec(datapath+'NGC5864_28jun11.0300_aper1.fits',wave=wave1_bar)
-    flux2_bar = aycamp_readspec(datapath+'NGC5195_27jun11.0229_aper1.fits',wave=wave2_bar)
-    flux3_bar = aycamp_readspec(datapath+'NGC6548_28jun11.0304_aper1.fits',wave=wave3_bar)
+    flux1_bar = aycamp_readspec(datapath+'NGC5864_f.fits',wave=wave1_bar)
+    flux2_bar = aycamp_readspec(datapath+'NGC5195_f.fits',wave=wave2_bar)
+    flux3_bar = aycamp_readspec(datapath+'NGC6548_f.fits',wave=wave3_bar)
 
 ;   wave1_bar = wave1_bar/(1+0.001551)
 ;   wave2_bar = wave2_bar/(1+0.006288)
@@ -133,83 +82,78 @@ pro lenticulars
 
     aycamp_plotconfig, psfile=psfile, /psclose, /pdf
 ;   spawn, 'convert '+repstr(psfile,'.ps','.png'), /sh
-
-stop    
     
+; ---------------------------------------------------------------------------
+; make a plot showing the individual objects
     psfile = 'lenticulars.ps'
     aycamp_plotconfig, 6, pos, psfile=psfile, yspace=1.0
     
 ; pair 1    
-    flux = readspec('M102',wave=wave)
+    flux = aycamp_readspec(datapath+'M102_f.fits',wave=wave)
     djs_plot, wave, smooth(1E15*flux,3), position=pos[*,0], psym=10, xsty=3, $
       ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['M102','S0'], /left, /top, box=0
       
-    flux = readspec('NGC5195',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5195_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,1], /noerase, $
       psym=10, xsty=3, ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5195','SB0'], /left, /top, box=0
       
 ; pair 2
-    flux = readspec('NGC5354',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5354_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,0], psym=10, xsty=3, $
       ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5354','S0'], /left, /top, box=0
       
-    flux = readspec('NGC5710',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5710_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,1], /noerase, $
       psym=10, xsty=3, ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5710','SB0'], /left, /top, box=0
       
 ; pair 3
-    flux = readspec('NGC5485',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5485_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,0], psym=10, xsty=3, $
       ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5485','S0'], /left, /top, box=0
       
-    flux = readspec('NGC6654',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC6654_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,1], /noerase, $
       psym=10, xsty=3, ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 6654','SB0'], /left, /top, box=0
       
 ; pair 4
-    flux = readspec('NGC5353',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5353_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,0], psym=10, xsty=3, $
       ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5353','S0'], /left, /top, box=0
       
-    flux = readspec('NGC5864',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5864_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,1], /noerase, $
       psym=10, xsty=3, ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5864','SB0'], /left, /top, box=0
       
 ; pair 5
-    flux = readspec('NGC5273',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC5273_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,0], psym=10, xsty=3, $
       ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 5273','S0'], /left, /top, box=0
       
-    flux = readspec('NGC6548',wave=wave)
+    flux = aycamp_readspec(datapath+'NGC6548_f.fits',wave=wave)
     djs_plot, wave, 1E15*flux, position=pos[*,1], /noerase, $
       psym=10, xsty=3, ysty=3, xtitle='Observed Wavelength (\AA)', $
       ytitle='Flux (10^{-15} erg s^{-1} cm^{-2} \AA^{-1})'
     legend, ['NGC 6548','SB0'], /left, /top, box=0
       
     aycamp_plotconfig, psfile=psfile, /psclose, /pdf
-
-    
-    
-stop    
-
 
 return
 end

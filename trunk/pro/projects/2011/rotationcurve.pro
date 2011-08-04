@@ -1,5 +1,9 @@
-pro rotationcurve
+THIS ROUTINE IS INCOMPATIBLE WITH THE CURRENT (2011-AUG-04) VERSION OF THE DATA REDUCTIONS!
 
+pro rotationcurve
+; jm11jun28ucsd - analyze the data obtained for the NGC3448 rotation
+; curve project
+    
     datapath = getenv('AYCAMP_DATA')+'2011/bok/28jun11/spec1d/'
     outpath = getenv('AYCAMP_DATA')+'2011/projects/rotationcurve/'
 
