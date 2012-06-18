@@ -3,10 +3,14 @@
 
 = Introduction =
 
-This procedure needs to be run on the observer computer in the ARO 12m (remotely is fine).
+This procedure needs to be run on the observer computer in the ARO 12m (remotely is fine). Change target names as appropriate.
 See also: [http://aro.as.arizona.edu/docs/analysis_manuals.htm]
 
 = *Details* =
+
+In terminal:
+otf2class -bs # -es # -i (1 or 2) -s 10 -d -o /home/obs/ _directory_ _filename_
+
 initialize with @P:startx
 to select backend use "set telescope" or "st", st 12m-Mac*
 
@@ -16,7 +20,7 @@ ss "NGC5461"
 set number 533 624
 
 
-for example, files look like: *w3 irs5 n2h+ files are:*
+for example, files look like: 
 class_006.12m through class_009.12m
 % so need to run sequence on each and then combine.
 
@@ -45,4 +49,81 @@ w3irs5_007.base.base
 w3irs5_008.base.base
 !!!!!!!still need to run on 009!!!!!!!!!!
 mx -400 300
-sw -100 0
+sw -100 0.
+
+
+ss “sourcename”
+find
+list
+sw (block out line and bad channels)
+mx -10 28
+@P:baseallkill (if bad channel)
+Bad channel # (50)
+sourcename_fb11.base
+file in sourcename_fb11.base
+find
+list
+@P:scaleall
+calibration factor # (on the order of 1.05)
+sourcename_fb11.scale
+
+file in class.sdd_fb12.khu_001
+find
+list
+@P:baseall (if no bad channel)
+J=1
+sourcename_fb12.base
+file in sourcename_fb12.base
+find
+list
+@P:scaleall
+calibration factor # (on the order of 0.95)
+sourcename_fb12.scale
+file in sourcename_fb12.scale
+find
+list
+@P:combine
+sourcename_fb11.scale
+correct scan #
+file in sourcename_fb11.scale
+find
+list
+@P:convall
+lmin -210
+lmax 210
+bmin -300
+bmax 300
+step size 30
+new beam 20
+old beam 2
+sourcename.conv
+file in sourcename.conv
+find
+list
+my -2 3
+@P:mapcso
+hardcopy filename.ps /device ps color
+
+
+*Contour Mapping*
+class
+@P:startx
+file in cluster*.conv
+mx -2 18
+find
+list
+print area -2 18 /output cluster*.area
+exit
+greg
+@P:con
+cluster*.area
+2
+3
+4
+n
+(0.06 to 0.13522 by 0.025)
+n
+n
+“Title”
+“Object”
+hardcopy cluster*.ps /device ps color
