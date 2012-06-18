@@ -105,7 +105,7 @@ my -2 3
 hardcopy filename.ps /device ps color
 
 
-*Contour Mapping*
+*_Contour Mapping_*
 class
 @P:startx
 file in cluster*.conv
