@@ -1,0 +1,52 @@
+#summary One-sentence summary of this page.
+#labels radio
+
+= Introduction =
+
+This procedure needs to be run on the observer computer in the ARO 12m (remotely is fine).
+See also: [http://aro.as.arizona.edu/docs/analysis_manuals.htm]
+
+= Details =
+initialize with @P:startx
+to select backend use "set telescope" or "st", st 12m-Mac*
+
+file in class_010.12m
+
+ss "NGC5461"
+set number 533 624
+
+
+W3 IRS5 is in files
+
+data analysis notes:
+8/25/2011
+w3 irs5 n2h+ files are:
+class_006.12m through class_009.12m
+% so need to run Kevin's sequence on each and then combine.
+
+%1st for each file convert the on the fly file to a class file. specify 1st record and last, use backend 3 and 4 and debug and put in the aac folder:
+otf2class -bs 1953 -es 1960 -i 3 -d -o /home/obs/aac/ sdd.aac_006
+otf2class -bs 1962 -es 2043 -i 3 -d -o /home/obs/aac/ sdd.aac_007
+otf2class -bs 2045 -es 2126 -i 3 -d -o /home/obs/aac/ sdd.aac_008
+otf2class -bs 2131 -es 2212 -i 3 -d -o /home/obs/aac/ sdd.aac_009
+
+%skipped Kevin's @scaleall and @P:baseallkill since they seemed surpurflous.
+
+%In class:
+fi class.sdd_fb21.aac_006
+find
+list
+%define a window, use fact that  VLSR is -40:
+
+%could use base all kill but don't need to, channels look ok and can window out.
+
+@P:baseall
+% (if no bad channel)
+J=1
+%created:
+w3irs5_006.base.base
+w3irs5_007.base.base
+w3irs5_008.base.base
+!!!!!!!still need to run on 009!!!!!!!!!!
+mx -400 300
+sw -100 0
