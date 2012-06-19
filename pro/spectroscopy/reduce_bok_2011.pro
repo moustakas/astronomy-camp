@@ -32,6 +32,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
   unpack_pne=unpack_pne, unpack_rotationcurve=unpack_rotationcurve, $
   clobber=clobber
 
+  unpack_something = ( $
+                     keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
+                     keyword_set(unpack_vyaqr) or keyword_set(unpack_ngc4559) or $
+                     keyword_set(unpack_lenticulars) or keyword_set(unpack_pne) or $
+                     keyword_set(unpack_rotationcurve) $
+                     ) $
+                     ? 1 : 0
+
     datapath = getenv('AYCAMP_DATA')+'2011/bok/'
     projectpath = datapath+'projects/'
     if (file_test(projectpath,/dir) eq 0) then $
@@ -308,11 +316,13 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
 ; ##################################################
 ; unpack each project in turn
-    for inight = 0, nnight-1 do begin
-       scifiles1 = file_search(datapath+night[inight]+'/Science/sci-*.fits*')
-       if (inight eq 0) then scifiles = scifiles1 else scifiles = [scifiles,scifiles1]
-    endfor
-    allinfo = aycamp_forage(scifiles)
+    if unpack_something eq 1 then begin
+       for inight = 0, nnight-1 do begin
+          scifiles1 = file_search(datapath+night[inight]+'/Science/sci-*.fits*')
+          if (inight eq 0) then scifiles = scifiles1 else scifiles = [scifiles,scifiles1]
+       endfor
+       allinfo = aycamp_forage(scifiles)
+    endif
 
 ; -------------------------
 ; WISE    
