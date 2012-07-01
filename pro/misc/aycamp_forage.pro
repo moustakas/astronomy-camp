@@ -30,6 +30,7 @@ function aycamp_forage, fitslist1, ext=ext
     endif
 
     fitslist = file_search(fitslist1,count=nfits)
+
     for jj = 0L, nfits-1L do begin
        if (file_test(fitslist[jj]) eq 0) then $
          splog, 'File '+fitslist[jj]+' not found'
