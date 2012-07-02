@@ -57,14 +57,19 @@ pro reduce_bok_2012, night, $
 ;including "ALL OF THE ABOVE" as a valid option.  maybe also give the
 ;option to select multiple nights in some easy fashion.
 
-  night0 = ['21jun12','22jun12'];'23jun12'];,'26jun12','27jun12']
+  if not keyword_set(camp) then camp='2012b'
+  
+  if camp eq '2012a' then $
+     night0 = ['21jun12','22jun12'] $ ;'23jun12'];,'26jun12','27jun12']
+  else if camp eq '2012b' then $
+     night0 = ['01jul12'] 
+
   if (n_elements(night) eq 0) then night = night0
   nnight = n_elements(night)
 
-  if not keyword_set(camp) then camp='2012b'
   
   ;this line is ALSO tied to a particular camp 
-  datapath = getenv('AYCAMP_DATA')+camp+'bok/'
+  datapath = getenv('AYCAMP_DATA')+camp+'/bok/'
   projectpath = datapath+'projects/'
   if (file_test(projectpath,/dir) eq 0) then $
      spawn, 'mkdir -p '+projectpath, /sh
