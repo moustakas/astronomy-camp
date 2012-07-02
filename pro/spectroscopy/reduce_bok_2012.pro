@@ -377,6 +377,7 @@ pro reduce_bok_2012, night, $
           keep = where( $
             ;(stdplan.maskname eq 4.5) and $
             (strmatch(stdplan.filename,'*23jun12*',/fold) eq 0) and $ ;list any bad std files here...
+            (strmatch(stdplan.filename,'*01jul12.0061*',/fold) eq 0) and $ ;list any bad std files here...
             (strmatch(stdplan.filename,'*23jun11.0109*',/fold) eq 0)) ;;;
 
           stdplan = stdplan[keep]
