@@ -242,6 +242,7 @@ pro reduce_bok_2012, night, $
 ; remove crap exposures
 ;THIS NEEDS TO BE BROKEN OUT OF HERE!!!
           case night[inight] of
+             ;; CAMP ATC2012-A
              '21jun12': keep = where( $
                                (strmatch(new.filename,'*test*') eq 0) and $  
                                (strmatch(new.filename,'*.000[1-9].*') eq 0) and $ ; focus
@@ -274,6 +275,27 @@ pro reduce_bok_2012, night, $
                                (strmatch(new.filename,'*test*') eq 0)  $
                                     )
              
+             ;; CAMP ATC2012-B
+             '01jul12': keep = where( $
+                               (strmatch(new.filename,'*test*') eq 0)  $
+                                    )
+
+             '02jul12': keep = where( $
+                               (strmatch(new.filename,'*test*') eq 0)  $
+                                    )
+             
+             '03jul12': keep = where( $
+                               (strmatch(new.filename,'*test*') eq 0)  $
+                                    )
+
+             '04jul12': keep = where( $
+                               (strmatch(new.filename,'*test*') eq 0)  $
+                                    )
+
+             '05jul12': keep = where( $
+                               (strmatch(new.filename,'*test*') eq 0)  $
+                                    )
+
 
 
              ;'22jun11': keep = where($
