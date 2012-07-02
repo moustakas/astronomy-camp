@@ -30,6 +30,7 @@ pro reduce_bok_2012, night, $
                      preproc=preproc, plan=plan, calib=calib, $
                      standards=standards, sensfunc=sensfunc, science=science, $
                      clobber=clobber, chk=chk, $
+                     camp=camp, $
 ;perhaps change the keywords below to "unpack=unpack, _EXTRA=extra"?
 ; where it would be called with "... /unpack, /sne", for example.
 ; this way, the code doesn't have to be tied to an individual year's
@@ -39,12 +40,13 @@ pro reduce_bok_2012, night, $
                      unpack_sne=unpack_sne, $
                      unpack_lenticulars=unpack_lenticulars, $
                      unpack_alberio=unpack_alberio, $
-                     unpack_gl649=unpack_gl649
+                     unpack_gl649=unpack_gl649, $
+                     unpack_ss433=unpack_ss433
   
   unpack_something = ( $
                      keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
                      keyword_set(unpack_lenticulars) or keyword_set(unpack_alberio) or $
-                     keyword_set(unpack_gl649)  $
+                     keyword_set(unpack_gl649) or keyword_set(unpack_ss433)  $
                      ) $
                      ? 1 : 0
   
@@ -55,11 +57,14 @@ pro reduce_bok_2012, night, $
 ;including "ALL OF THE ABOVE" as a valid option.  maybe also give the
 ;option to select multiple nights in some easy fashion.
 
-  if (n_elements(night) eq 0) then night = ['21jun12','22jun12','23jun12'];,'26jun12','27jun12']
+  night0 = ['21jun12','22jun12'];'23jun12'];,'26jun12','27jun12']
+  if (n_elements(night) eq 0) then night = night0
   nnight = n_elements(night)
+
+  if not keyword_set(camp) then camp='2012b'
   
   ;this line is ALSO tied to a particular camp 
-  datapath = getenv('AYCAMP_DATA')+'2012a/bok/'
+  datapath = getenv('AYCAMP_DATA')+camp+'bok/'
   projectpath = datapath+'projects/'
   if (file_test(projectpath,/dir) eq 0) then $
      spawn, 'mkdir -p '+projectpath, /sh
@@ -72,9 +77,21 @@ pro reduce_bok_2012, night, $
      'Bad pixel file '+badpixfile+' not found'
 
   ;AGAIN: NEED TO BREAK THIS OUT TO BE AGNOSTIC TO CAMP DATASET
+  ;ALSO, NEED IT TO BE SPECIFIC TO SETUPS!
   sensfuncfile = datapath+'sensfunc_2012.fits'
 
-  
+  if ((night eq '21jun12') or (night eq '22jun12') or (array_equal(night,night0))) then $
+     sensfuncfile = datapath+'sensfunc_2012_400line4889_6.2tilt_2.5slit.fits' $
+  else if (night eq '26jun12') then $
+     sensfuncfile = datapath+'sensfunc_2012_1200line7847_25.0tilt_2.5slit.fits' $
+  else if (night eq '01jul12') then $
+     sensfunc = datapath + 'sensfunc_2012b_400line4889_6.58tilt_2.5slit.fits' $
+  else begin 
+     print, 'ERROR - CODE THIS UP: NIGHT not included in REDUCE_BOK_2012.PRO near line 90-ish.'
+     return
+  endelse
+
+
 ; ##################################################
 ; pre-processing: read the data in the "rawdata" directory, repair bad
 ; pixels, remove cosmic rays, clean up headers, and move the spectra
