@@ -41,13 +41,14 @@ pro reduce_bok_2012, night, $
                      unpack_lenticulars=unpack_lenticulars, $
                      unpack_alberio=unpack_alberio, $
                      unpack_gl649=unpack_gl649, $
-                     unpack_ss433=unpack_ss433
+                     unpack_ss433=unpack_ss433, $
+                     unpack_test=unpack_test
   
   unpack_something = ( $
                      keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
                      keyword_set(unpack_lenticulars) or keyword_set(unpack_alberio) or $
                      keyword_set(unpack_gl649) or keyword_set(unpack_ss433)  $
-                     ) $
+                     or keyword_set(unpack_test)) $
                      ? 1 : 0
   
   ;check if any of the step keywords are defined?  if not, complain, exit.
@@ -680,6 +681,35 @@ pro reduce_bok_2012, night, $
 ;      aycamp_niceprint, info.file, info.object, obj
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),10D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=1, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; ------------------------------------------------
+; The test data from the second Advanced Camp.
+
+    if keyword_set(unpack_test) then begin
+       outpath = projectpath+'test/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+       info = allinfo[where($
+         strmatch(allinfo.object,'*RandomStar*',/fold))]
+       obj = strcompress(info.object,/remove)
+;      aycamp_niceprint, info.file, obj, info.ra, info.dec
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),30D/3600.0)
        grp = allgrp[uniq(allgrp,sort(allgrp))]
 
        for ig = 0, n_elements(grp)-1 do begin
