@@ -13,6 +13,8 @@ In terminal:
 {{{
 otf2class -bs # -es # -i (1 or 2) -s 10 -d -o /home/obs/ _directory_ _filename_
 }}}
+where {{{bs}}} and {{{es}}} are the beginning and end scan numbers.
+
 Open {{{class}}} from command line and 
 initialize with {{{@P:startx}}}
 The print from this command should include the following glossary of shortcuts:
@@ -59,9 +61,10 @@ list
 }}}
 %define a window, use fact that  VLSR is x km/s:
 
-To preview a single profile and determine the window get a record and plot it, i.e.:
+To preview the first profile and determine the window, get a record, view the header and plot:
 {{{
-get 7405
+get 1
+header
 plot
 }}}
 
