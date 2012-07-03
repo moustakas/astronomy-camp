@@ -43,9 +43,10 @@ list
 %define a window, use fact that  VLSR is x km/s:
 
 To preview a single profile and determine the window get a record and plot it, i.e.:
-{{{get 7405
+{{{
+get 7405
 plot
-}}
+}}}
 
 %could use base all kill but don't need to, channels look ok and can window out.
 
@@ -57,12 +58,19 @@ J=1
 w3irs5_006.base.base
 w3irs5_007.base.base
 w3irs5_008.base.base
+}}}
 
-
+complete data range:
+{{{
 mx -400 300
+}}}
+
+window including line window:
+{{{
 sw -100 0.
+}}}
 
-
+{{{
 ss “sourcename”
 find
 list
