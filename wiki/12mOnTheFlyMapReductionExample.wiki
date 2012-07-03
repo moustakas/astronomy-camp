@@ -14,11 +14,27 @@ otf2class -bs # -es # -i (1 or 2) -s 10 -d -o /home/obs/ _directory_ _filename_
 }}}
 Open {{{class}}} from command line and 
 initialize with {{{@P:startx}}}
+The print from this command should include the following glossary of shortcuts:
+{{{
+symbol mx "las\set mode x"
+LAS_3> symbol my "las\set mode y"
+LAS_3> symbol ss "las\SET Source"
+LAS_3> symbol sl "las\set line"
+LAS_3> symbol ssc "las\set scan"
+LAS_3> symbol so "las\set off"
+LAS_3> symbol b1 "las\base 1"
+LAS_3> symbol sw "las\set window"
+LAS_3> symbol fi "las\file in"
+LAS_3> symbol fo "las\file out"
+LAS_3> symbol st "las\set telescope"
+}}}
+
+
 to select backend use "set telescope" or "st", i.e. {{{st 12m-Mac}}}.
 {{{
 file in class_010.12m
 
-ss "NGC5461"
+ss "nameofsource"
 set number 533 624
 }}}
 for example, files look like: 
@@ -70,8 +86,10 @@ window including line window:
 sw -100 0.
 }}}
 
+
+A quick sequence might look like:
 {{{
-ss “sourcename”
+ss “nameofsource”
 find
 list
 sw (block out line and bad channels)
