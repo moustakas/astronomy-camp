@@ -14,7 +14,7 @@ otf2class -bs # -es # -i (1 or 2) -s 10 -d -o /home/obs/ _directory_ _filename_
 }}}
 Open {{{class}}} from command line and 
 initialize with {{{@P:startx}}}
-to select backend use "set telescope" or "st", st 12m-Mac*
+to select backend use "set telescope" or "st", i.e. {{{st 12m-Mac}}}.
 {{{
 file in class_010.12m
 
