@@ -5,7 +5,7 @@
 
 This procedure needs to be run on the observer computer in the ARO 12m (remotely is fine). Change target names as appropriate.
 See also: [http://aro.as.arizona.edu/docs/analysis_manuals.htm]
-The scripts referred to below, and called with {{{@P:}}} are located in: */home/obs/GAG/*
+The scripts referred to below, and called with {{{@P:}}} are located on modelo in: */home/obs/GAG/*
 
 = *Details* =
 
