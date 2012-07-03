@@ -127,6 +127,8 @@ find
 list
 @P:convall
 }}}
+The {{{convall}}} script will ask for the following parameters:
+{{{
 lmin -210 #MIN RA offset (in units of ARCSEC) 
 lmax 210 #MAX RA offset (in units of ARCSEC) 
 bmin -300 #MIN Dec offset (in units of ARCSEC) 
@@ -135,6 +137,7 @@ step size 30
 new beam 20
 old beam 2
 sourcename.conv
+}}}
 {{{
 file in sourcename.conv
 find
