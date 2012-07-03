@@ -126,14 +126,16 @@ file in sourcename_fb11.scale
 find
 list
 @P:convall
-lmin -210
-lmax 210
-bmin -300
-bmax 300
+}}}
+lmin -210 #MIN RA offset (in units of ARCSEC) 
+lmax 210 #MAX RA offset (in units of ARCSEC) 
+bmin -300 #MIN Dec offset (in units of ARCSEC) 
+bmax 300 ##MAX Dec offset (in units of ARCSEC) 
 step size 30
 new beam 20
 old beam 2
 sourcename.conv
+{{{
 file in sourcename.conv
 find
 list
