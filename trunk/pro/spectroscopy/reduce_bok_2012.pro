@@ -72,8 +72,8 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
     ;ALSO, NEED IT TO BE SPECIFIC TO SETUPS!
     sensfuncfile = datapath+'sensfunc_2012.fits'
     
-    if ((night eq '21jun12') or (night eq '22jun12') or (night eq '23jun12') $
-        (array_equal(night,night0)) or $
+    if ((night eq '21jun12') or (night eq '22jun12') or $
+        (night eq '23jun12') or $
         (array_equal(night,['21jun12','22jun12'])) or $
         (array_equal(night,['21jun12','23jun12'])) or $
         (array_equal(night,['22jun12','23jun12'])) or $
