@@ -1,12 +1,21 @@
-#import packages
+# douglase@bu.edu
+''' The purpose of this script is to take an .area file from a CLASS On-The-Fly map and generate a fits file with coordinate headers,
+The file name, the center position of the map and the target name
+ started at ATC2011, revised at ATC II, 2012
+'''
+
 #file = raw_input('filename:')
 #target_name=raw_input('target name:')
 #RA=raw_input('RA, decimal:')
 #DEC=raw_input('DEC, decimal:')
+#s = raw_input('GILDAS CLASS Filename--> ')
+
+#import packages
 import numpy
 import pyfits
 import time
-#s = raw_input('GILDAS CLASS Filename--> ')
+
+# example input criteria:
 file = "sdd_fb11.aac_020.area"
 
 target_name="M13, Eagle Nebula"
@@ -15,7 +24,6 @@ s=dir+file
 
 RA =274.7  #target position, degrees RA,  18:19:32.9 -13:47:33.5
 DEC = -13.7790277778
-
 
 def areatofits(file,s,target_name,RA,DEC):
     area=numpy.genfromtxt(s, comments="!")
@@ -27,7 +35,7 @@ def areatofits(file,s,target_name,RA,DEC):
     xvals=[area[0,1]]
     yvals=[area[0,2]]
 
-#an inefficent loop through the values to find the dimensions of the array:
+#an inefficent loop through the values to find the dimensions of the array, ok b/c only 2 vectors:
     for i in range(numel-1):
         if area[i,1] not in xvals:
             xvals.append(area[i,1])        
@@ -67,7 +75,7 @@ def areatofits(file,s,target_name,RA,DEC):
     hdu.header.update('CTYPE1', CTYPE1)
     hdu.header.update('CTYPE2', CTYPE2)
 
-    hdulist.writeto('streamlined'+file+time.asctime()+'.fits')
+    hdulist.writeto(file+time.asctime()+'.fits')
 
 
 areatofits(file,s,target_name,RA,DEC)
