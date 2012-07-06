@@ -1,7 +1,10 @@
-# douglase@bu.edu
-''' The purpose of this script is to take an .area file from a CLASS On-The-Fly map and generate a fits file with coordinate headers,
-The file name, the center position of the map and the target name
- started at ATC2011, revised at ATC II, 2012
+# tested with Enthought Python 2.7.1 |EPD 7.0-2 (32-bit), os-x 10.7.
+''' The purpose of this script is to take an .area file from a CLASS On-The-Fly map and generate a fits file with coordinate headers.
+
+Inputs:
+The file name, the center position of the map and the target name.
+
+started at ATC2011, revised at ATC II, 2012,  douglase@bu.edu
 '''
 
 #file = raw_input('filename:')
@@ -16,7 +19,7 @@ import pyfits
 import time
 
 # example input criteria:
-file = "sdd_fb11.aac_020.area"
+file = "sdd_fb12.aac_020_800x800.area"
 
 target_name="M13, Eagle Nebula"
 dir="/Users/edouglas/Documents/astronomycamp/atc2012/"
@@ -45,7 +48,11 @@ def areatofits(file,s,target_name,RA,DEC):
 
 
     vals=numpy.array(area[:,3])
-    image=vals.reshape(numpy.size(xvals),numpy.size(yvals))
+    #test for rectangle:
+    if numpy.size(xvals)*numpy.size(yvals) == numpy.size(vals):
+        image=vals.reshape(numpy.size(xvals),numpy.size(yvals))
+    else:
+        print("rows or columns are not all the same size")
 
 #rotate image as appropriate:
     image=numpy.rot90(image,k=3)
