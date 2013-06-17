@@ -24,19 +24,18 @@
 ;   B. Swift, 2012 Jun 20-28, Steward Obs.
 ;-
 
-; long_setflex, 'Science/sci-23jun11.0092.fits.gz', 'bok_sky_bcs_400.sav'
-
 pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
         standards=standards, sensfunc=sensfunc, science=science, $
-        clobber=clobber, chk=chk, camp=camp, $
-        unpack_blackhole=unpack_blackhole, unpack_test=unpack_test
+        clobber=clobber, chk=chk, unpack_blackhole=unpack_blackhole, $
+        unpack_test=unpack_test
 ;perhaps change the unpack keywords to "unpack=unpack, _EXTRA=extra"?
 ; where it would be called with "... /unpack, /sne", for example.
 ; this way, the code doesn't have to be tied to an individual year's
 ; projects. and then break out the "unpack" code into another
 ; procedure anyway...
   
-  unpack_something = (keyword_set(unpack_blackhole) or keyword_set(unpack_test))
+    unpack_something = (keyword_set(unpack_blackhole) or $
+        keyword_set(unpack_test))
   
   ;check if any of the step keywords are defined?  if not, complain, exit.
 
@@ -45,55 +44,24 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 ;including "ALL OF THE ABOVE" as a valid option.  maybe also give the
 ;option to select multiple nights in some easy fashion.
 
-  if not keyword_set(camp) then camp='2012'
-  
-  if camp eq '2012a' then $
-     night0 = ['21jun12','22jun12'] $ ;'23jun12'];,'26jun12','27jun12']
-  else if camp eq '2012' then $
-     night0 = ['21jun12','22jun12','23jun12','26jun12','01jul12'] 
-
-  if (n_elements(night) eq 0) then night = night0
-  nnight = n_elements(night)
-  
   ;this line is ALSO tied to a particular camp 
-  datapath = getenv('AYCAMP_DATA')+camp+'/bok/'
-  projectpath = datapath+'projects/'
-  if (file_test(projectpath,/dir) eq 0) then $
-     spawn, 'mkdir -p '+projectpath, /sh
+    datapath = getenv('AYCAMP_DATA')+'2012/bok/'
+    projectpath = datapath+'projects/'
+    if (file_test(projectpath,/dir) eq 0) then $
+        spawn, 'mkdir -p '+projectpath, /sh
   
   ;
   ;make the campers build a bad pixel mask?  could be interesting.
   ;
-  badpixfile = getenv('AYCAMP_DIR')+'/data/bok_badpix.dat'
-  if (file_test(badpixfile) eq 0) then message, $
-     'Bad pixel file '+badpixfile+' not found'
+    badpixfile = getenv('AYCAMP_DIR')+'/data/bok_badpix.dat'
+    if (file_test(badpixfile) eq 0) then message, $
+        'Bad pixel file '+badpixfile+' not found'
+;   sensfuncfile = datapatha+'sensfunc_2012.fits'
 
-    ;AGAIN: NEED TO BREAK THIS OUT TO BE AGNOSTIC TO CAMP DATASET
-    ;ALSO, NEED IT TO BE SPECIFIC TO SETUPS!
-    sensfuncfile = datapath+'sensfunc_2012.fits'
-    
-    if ((night eq '21jun12') or (night eq '22jun12') or $
-        (night eq '23jun12') or $
-        (array_equal(night,['21jun12','22jun12'])) or $
-        (array_equal(night,['21jun12','23jun12'])) or $
-        (array_equal(night,['22jun12','23jun12'])) or $
-        (array_equal(night,['22jun12','21jun12'])) or $
-        (array_equal(night,['23jun12','21jun12'])) or $
-        (array_equal(night,['23jun12','22jun12']))) then $
-        sensfuncfile = datapath+$
-            'sensfunc_2012_400line4889_6.2tilt_2.5slit.fits' $
-    else if (night eq '26jun12') then $
-        sensfuncfile = datapath+$
-            'sensfunc_2012_1200line7847_25.0tilt_2.5slit.fits'$
-    else if (night eq '01jul12') then $
-        sensfuncfile = datapath+$
-            'sensfunc_2012_400line4889_6.58tilt_2.5slit.fits' $
-    else begin 
-        print, 'ERROR - CODE THIS UP: NIGHT not included in '+$
-            'REDUCE_BOK_2012.PRO near line 90-ish.'
-        return
-    endelse
-
+    if (n_elements(night) eq 0) then night = ['21jun12','22jun12','23jun12', $
+        '26jun12','27jun12','01jul12']
+    nnight = n_elements(night)
+  
 
 ; ##################################################
 ; pre-processing: read the data in the "rawdata" directory, repair bad
@@ -138,22 +106,22 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 
-                if strmatch(allfiles[iobj],'*21jun12*',/fold) then sxaddpar, $
-                    hdr, 'TILTPOS', '6.2'
-                if strmatch(allfiles[iobj],'*21jun12*',/fold) then sxaddpar, $
-                    hdr, 'OBSERVER', 'Camp'
+                if strmatch(allfiles[iobj],'*21jun12*',/fold) then $
+                    sxaddpar, hdr, 'TILTPOS', '6.2'
+                if strmatch(allfiles[iobj],'*21jun12*',/fold) then $
+                    sxaddpar, hdr, 'OBSERVER', 'Camp'
 
-                if strmatch(allfiles[iobj],'*22jun12*',/fold) then sxaddpar, $
-                    hdr, 'INSFILTE', 'UV-36+Schott-8612' 
+                if strmatch(allfiles[iobj],'*22jun12*',/fold) then $
+                    sxaddpar, hdr, 'INSFILTE', 'UV-36+Schott-8612' 
 ;we didn't think we had a filter in, so we put 'none'.  turns out we did.  
 ;Betsey probably thinks we're huge idiots.
 
-                if strmatch(allfiles[iobj],'*26jun12*',/fold) then sxaddpar, $
-                    hdr, 'DISPERSE', '1200/7847', ' disperser' 
-                if strmatch(allfiles[iobj],'*26jun12*',/fold) then sxaddpar, $
-                    hdr, 'INSFOCUS', '006' 
-                if strmatch(allfiles[iobj],'*26jun12*',/fold) then sxaddpar, $
-                    hdr, 'TILTPOS', '20.0' 
+                if strmatch(allfiles[iobj],'*26jun12*',/fold) then $
+                    sxaddpar, hdr, 'DISPERSE', '1200/7847', ' disperser' 
+                if strmatch(allfiles[iobj],'*26jun12*',/fold) then $
+                    sxaddpar, hdr, 'INSFOCUS', '006' 
+                if strmatch(allfiles[iobj],'*26jun12*',/fold) then $
+                    sxaddpar, hdr, 'TILTPOS', '20.0' 
                 if strmatch(allfiles[iobj],'*26jun12_00[0-2]*',/fold) then $
                     sxaddpar, hdr, 'TILTPOS', '25.0' 
 
@@ -166,14 +134,14 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
                      (y1[ipix]-1)>0:(y2[ipix]-1)<(dims[1]-1)] = 1
                    image = djs_maskinterp(image,badpixmask,iaxis=0,/const)
                 endif
-                exp = sxpar(hdr,'exptime')
-                if (strlowcase(strtrim(type,2)) eq 'object') and $
-                    (exp gt 300.0) then begin
-                   splog, 'Identifying cosmic rays '
-                   aycamp_la_cosmic, image, gain=-1.0, readn=0.0, $
-                     outlist=newim, sigclip=5.0
-                   image = newim
-                endif
+;               exp = sxpar(hdr,'exptime')
+;               if (strlowcase(strtrim(type,2)) eq 'object') and $
+;                   (exp gt 300.0) then begin
+;                  splog, 'Identifying cosmic rays '
+;                  aycamp_la_cosmic, image, gain=-1.0, readn=0.0, $
+;                    outlist=newim, sigclip=5.0
+;                  image = newim
+;               endif
 
 ; the area of the detector that was read out changed slightly over the
 ; course of the camp, so standardize that here
@@ -242,30 +210,22 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
                 (strmatch(new.filename,'*.0044.*') eq 0) and $     ; standard, not at parallactic
                 (strmatch(new.filename,'*.004[6-9].*') eq 0) and $ ; bad flats
                 (strmatch(new.filename,'*.005[0-2].*') eq 0))     ; bad flats 
-
              '22jun12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0) and $ 
                 (strmatch(new.filename,'*.0009.*') eq 0) and $ ; continuum, won't use it
                 (strmatch(new.filename,'*.0010.*') eq 0)) ; continuum, won't use it
-             
              '23jun12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
-
              '26jun12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
-
              '27jun12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0)) 
-             
              '01jul12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
-
              '03jul12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
-
              '04jul12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
-
              '05jul12': keep = where( $
                 (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
@@ -328,20 +288,51 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
        if (n_elements(stdplan) eq 0) then splog, $
            'No standard stars observed!' $
         else begin
-          keep = where( $
-            ; List any bad standards here.
-            (strmatch(stdplan.filename,'*23jun12_0118*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*23jun12_0121*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*01jul12.0061*',/fold) eq 0))
+          temp = (stdplan.maskname[sort(stdplan.maskname)])[$
+              uniq(stdplan.maskname[sort(stdplan.maskname)])]
+          sensfunc_maskname = (temp[sort(temp)])[uniq(temp[sort(temp)])]
 
-          stdplan = stdplan[keep]
-          struct_print, stdplan
-          nstd = n_elements(stdplan)
-          splog, 'Building '+sensfuncfile+' from '+string(nstd,format='(I0)')+$
-              ' standards'
-          
-          aycamp_sensfunc, strtrim(stdplan.filename,2), $
-              strtrim(stdplan.starfile,2), nogrey=0, sensfuncfile=sensfuncfile
+          temp = (stdplan.wave[sort(stdplan.wave)])[$
+              uniq(stdplan.wave[sort(stdplan.wave)])]
+          sensfunc_wave = (temp[sort(temp)])[uniq(temp[sort(temp)])]
+
+          temp = (stdplan.grating[sort(stdplan.grating)])[$
+              uniq(stdplan.grating[sort(stdplan.grating)])]
+          sensfunc_grating = (temp[sort(temp)])[uniq(temp[sort(temp)])]
+
+          for imaskname = 0, n_elements(sensfunc_maskname)-1 do begin
+            for iwave = 0, n_elements(sensfunc_wave)-1 do begin
+              for igrating = 0, n_elements(sensfunc_grating)-1 do begin
+                keep = where( $
+                  (stdplan.maskname eq sensfunc_maskname[imaskname]) and $
+                  (stdplan.wave eq sensfunc_wave[iwave]) and $
+                  (stdplan.grating eq sensfunc_grating[igrating]) and $
+                  ; List any bad standards here.
+                  (strmatch(stdplan.filename,'*23jun12_0118*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*23jun12_0121*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*01jul12.0061*',/fold) eq 0), $
+                  nkeep)
+                if (nkeep gt 0) then begin
+                  stdplan_temp = stdplan[keep]
+                  struct_print, stdplan_temp
+                  nstd = n_elements(stdplan_temp)
+
+                  sensfuncfile = "sensfunc_2012_"+strjoin(strsplit($
+                      sensfunc_grating[igrating],'/',/extract),'.')+ $
+                      "grating_"+strcompress(sensfunc_maskname[imaskname], $
+                      /remove_all)+"slit_"+strcompress(sensfunc_wave[iwave], $
+                      /remove_all)+"tilt.fits"
+
+                  splog, 'Building '+sensfuncfile+' from '+ $
+                      string(nstd,format='(I0)')+' standards'
+              
+                  aycamp_sensfunc, strtrim(stdplan_temp.filename,2), $
+                      strtrim(stdplan_temp.starfile,2), nogrey=0, $
+                      sensfuncfile=sensfuncfile
+                endif
+              endfor
+            endfor
+          endfor
        endelse
     endif 
 
@@ -383,12 +374,18 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 ; Unpack the various projects.
 
     if unpack_something eq 1 then begin
+        first = 0
         for inight = 0, nnight-1 do begin
             scifiles1 = file_search(datapath+night[inight]+$
                 '/Science/sci-*.fits*', count=niscifiles)
-            if niscifiles gt 0 then begin
-                if (inight eq 0) then scifiles = scifiles1 $
-                else scifiles = [scifiles,scifiles1]
+
+            if (niscifiles gt 0) then begin
+              if (first eq 0) then begin
+                scifiles = scifiles1
+                first = 1
+              endif else begin
+                scifiles = [scifiles,scifiles1]
+              endelse
             endif
         endfor
         allinfo = aycamp_forage(scifiles)
@@ -452,6 +449,35 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
             sensfuncfile=sensfuncfile, /clobber, /writetxt
           aycamp_plotspec, outfile, /postscript, scale=1D16, $
             objname=obj[these[0]]
+       endfor
+    endif
+
+; ------------------------------------------------
+; The test data from the second Advanced Camp.
+
+    if keyword_set(unpack_test) then begin
+       outpath = projectpath+'test/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+
+       info = allinfo[where($
+         strmatch(allinfo.object,'*RandomStar*',/fold))]
+       obj = strcompress(info.object,/remove)
+;      aycamp_niceprint, info.file, obj, info.ra, info.dec
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),30D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=1, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
        endfor
     endif
 

@@ -32,13 +32,10 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
   unpack_pne=unpack_pne, unpack_rotationcurve=unpack_rotationcurve, $
   clobber=clobber
 
-  unpack_something = ( $
-                     keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
-                     keyword_set(unpack_vyaqr) or keyword_set(unpack_ngc4559) or $
-                     keyword_set(unpack_lenticulars) or keyword_set(unpack_pne) or $
-                     keyword_set(unpack_rotationcurve) $
-                     ) $
-                     ? 1 : 0
+    unpack_something = (keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
+        keyword_set(unpack_vyaqr) or keyword_set(unpack_ngc4559) or $
+        keyword_set(unpack_lenticulars) or keyword_set(unpack_pne) or $
+        keyword_set(unpack_rotationcurve)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2011/bok/'
     projectpath = datapath+'projects/'
@@ -48,7 +45,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
     badpixfile = getenv('AYCAMP_DIR')+'/data/bok_badpix.dat'
     if (file_test(badpixfile) eq 0) then message, $
       'Bad pixel file '+badpixfile+' not found'
-    sensfuncfile = datapath+'sensfunc_2011.fits'
+;    sensfuncfile = datapath+'sensfunc_2011.fits'
 
     if (n_elements(night) eq 0) then night = ['22jun11','23jun11',$
       '24jun11','27jun11','28jun11','29jun11']
@@ -81,12 +78,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
           readcol, badpixfile, x1, x2, y1, y2, comment='#', $
             format='L,L,L,L', /silent
           
-          allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fits*',count=nspec)
+          allfiles = file_search(datapath+'rawdata/'+night[inight]+'/*.fits*', $
+              count=nspec)
           if (nspec eq 0) then message, 'No files found in '+datapath+'rawdata/'
 
           for iobj = 0, nspec-1 do begin
              outfile = repstr('Raw/'+file_basename(allfiles[iobj]),'.gz','')
-             if file_test(outfile+'.gz') and (keyword_set(clobber) eq 0) then begin
+             if file_test(outfile+'.gz') and (keyword_set(clobber) eq 0) $
+                    then begin
                 splog, 'Output file '+outfile+' exists; use /CLOBBER'
              endif else begin
                 image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
@@ -95,27 +94,40 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 
-                if strmatch(allfiles[iobj],'*22jun11.004[5-6].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*22jun11.0052.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*22jun11.004[5-6].*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*22jun11.0052.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
 
-                if strmatch(allfiles[iobj],'*23jun11.008[3-4].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*23jun11.0095.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*23jun11.0109.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*23jun11.008[3-4].*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*23jun11.0095.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*23jun11.0109.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
 
                 if strmatch(allfiles[iobj],'*24jun11.0159*',/fold) then begin
                    sxaddpar, hdr, 'OBJECT', 'HZ44 4.5 slit'
                    sxaddpar, hdr, 'APERTURE', '4.5'
                 endif
-                if strmatch(allfiles[iobj],'*24jun11.0160*',/fold) then sxaddpar, hdr, 'OBJECT', 'HZ44 2.5 slit'
-                if strmatch(allfiles[iobj],'*24jun11.0180.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*24jun11.0181.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*24jun11.0160*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'HZ44 2.5 slit'
+                if strmatch(allfiles[iobj],'*24jun11.0180.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*24jun11.0181.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
 
-                if strmatch(allfiles[iobj],'*27jun11.0223.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*27jun11.0244.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*27jun11.025[2-3].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*27jun11.0223.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*27jun11.0244.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*27jun11.025[2-3].*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
                 
-                if strmatch(allfiles[iobj],'*28jun11.029[0-1].*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
-                if strmatch(allfiles[iobj],'*28jun11.0310.*',/fold) then sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*28jun11.029[0-1].*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*28jun11.0310.*',/fold) then $
+                    sxaddpar, hdr, 'APERTURE', '4.5'
 
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
@@ -258,24 +270,60 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                strtrim(stdplan1.filename,2)
              if (n_elements(stdplan) eq 0) then stdplan = stdplan1 else $
                stdplan = [stdplan,stdplan1]
-          endif else splog, 'No standard stars observed on night '+night[inight]+'!'
+          endif else splog, 'No standard stars observed on night '+ $
+              night[inight]+'!'
        endfor
-       if (n_elements(stdplan) eq 0) then splog, 'No standard stars observed!' else begin
-;         keep = lindgen(n_elements(stdplan))
-          keep = where($
-            (stdplan.maskname eq 4.5) and $
-            (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*23jun11.0095*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*27jun11.0244*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*27jun11.025[2-3]*',/fold) eq 0) and $
-            (strmatch(stdplan.filename,'*23jun11.0109*',/fold) eq 0))
-          stdplan = stdplan[keep]
-          struct_print, stdplan
-          nstd = n_elements(stdplan)
-          splog, 'Building '+sensfuncfile+' from '+string(nstd,format='(I0)')+' standards'
-          
-          aycamp_sensfunc, strtrim(stdplan.filename,2), strtrim(stdplan.starfile,2), $
-            nogrey=0, sensfuncfile=sensfuncfile
+       if (n_elements(stdplan) eq 0) then $
+          splog, 'No standard stars observed!' $
+       else begin
+          temp = (stdplan.maskname[sort(stdplan.maskname)])[$
+              uniq(stdplan.maskname[sort(stdplan.maskname)])]
+          sensfunc_maskname = (temp[sort(temp)])[uniq(temp[sort(temp)])]
+
+          temp = (stdplan.wave[sort(stdplan.wave)])[$
+              uniq(stdplan.wave[sort(stdplan.wave)])]
+          sensfunc_wave = (temp[sort(temp)])[uniq(temp[sort(temp)])]
+
+          temp = (stdplan.grating[sort(stdplan.grating)])[$
+              uniq(stdplan.grating[sort(stdplan.grating)])]
+          sensfunc_grating = (temp[sort(temp)])[uniq(temp[sort(temp)])]
+
+          for imaskname = 0, n_elements(sensfunc_maskname)-1 do begin
+            for iwave = 0, n_elements(sensfunc_wave)-1 do begin
+              for igrating = 0, n_elements(sensfunc_grating)-1 do begin
+    ;         keep = lindgen(n_elements(stdplan))
+                keep = where($
+                  (stdplan.maskname eq sensfunc_maskname[imaskname]) and $
+                  (stdplan.wave eq sensfunc_wave[iwave]) and $
+                  (stdplan.grating eq sensfunc_grating[igrating]) and $
+                  (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*23jun11.0095*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*27jun11.0244*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*27jun11.025[2-3]*', $
+                      /fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*23jun11.0109*',/fold) eq 0), $
+                  nkeep)
+                if (nkeep gt 0) then begin
+                  stdplan_temp = stdplan[keep]
+                  struct_print, stdplan_temp
+                  nstd = n_elements(stdplan_temp)
+
+                  sensfuncfile = "sensfunc_2011_"+strjoin(strsplit($
+                      sensfunc_grating[igrating],'/',/extract),'.')+ $
+                      "grating_"+strcompress(sensfunc_maskname[imaskname], $
+                      /remove_all)+"slit_"+strcompress(sensfunc_wave[iwave], $
+                      /remove_all)+"tilt.fits"
+
+                  splog, 'Building '+sensfuncfile+' from '+ $
+                      string(nstd,format='(I0)')+' standards'
+              
+                  aycamp_sensfunc, strtrim(stdplan_temp.filename,2), $
+                      strtrim(stdplan_temp.starfile,2), nogrey=0, $
+                      sensfuncfile=sensfuncfile
+                endif
+              endfor
+            endfor
+          endfor
        endelse
     endif 
 
@@ -293,8 +341,8 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
           hand = yanny_readone(handfile,/anonymous)
 
           delvarx, hand_fwhm, hand_x, hand_y
-          for ii = 2, 3 do begin
-;         for ii = 0, n_elements(hand)-1 do begin
+;          for ii = 2, 3 do begin
+          for ii = 0, n_elements(hand)-1 do begin
              scifile = repstr(strtrim(hand[ii].filename,2),'.gz','')
              
              gdhand = where(hand[ii].hand_fwhm gt 0.0,ngdhand)
@@ -302,7 +350,11 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
                 hand_fwhm = hand[ii].hand_fwhm[gdhand]
                 hand_x = hand[ii].hand_x[gdhand]
                 hand_y = hand[ii].hand_y[gdhand]
-             endif
+             endif else begin
+                 hand_fwhm = 0
+                 hand_x = 0
+                 hand_y = 0
+             endelse
 
              long_reduce, planfile, sciclobber=clobber, /justsci, $
                onlysci=scifile, hand_fwhm=hand_fwhm, hand_x=hand_x, $
@@ -317,9 +369,19 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; ##################################################
 ; unpack each project in turn
     if unpack_something eq 1 then begin
+       first = 0
        for inight = 0, nnight-1 do begin
-          scifiles1 = file_search(datapath+night[inight]+'/Science/sci-*.fits*')
-          if (inight eq 0) then scifiles = scifiles1 else scifiles = [scifiles,scifiles1]
+          scifiles1 = file_search(datapath+night[inight]+$
+              '/Science/sci-*.fits*', count=nscifiles)
+
+          if (nscifiles gt 0) then begin
+            if (first eq 0) then begin 
+              scifiles = scifiles1 
+              first = 1
+            endif else  begin
+              scifiles = [scifiles,scifiles1]
+            endelse
+          endif
        endfor
        allinfo = aycamp_forage(scifiles)
     endif
@@ -345,7 +407,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
+            sensfuncfile=sensfuncfile[0], /clobber, /writetxt
           aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
        endfor
     endif
