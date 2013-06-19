@@ -400,6 +400,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -407,7 +415,7 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile[0], /clobber, /writetxt
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
           aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
        endfor
     endif
