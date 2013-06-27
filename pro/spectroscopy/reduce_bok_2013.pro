@@ -32,7 +32,8 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
   unpack_transit=unpack_transit, clobber=clobber
 
     unpack_something = (keyword_set(unpack_kepler) or $
-        keyword_set(unpack_ngc5273) or keyword_set(unpack_sne)) ? 1 : 0
+        keyword_set(unpack_ngc5273) or keyword_set(unpack_sne) or $
+        keyword_set(unpack_eclipse) or keyword_set(unpack_transit)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2013/bok/'
     projectpath = datapath+'projects/'
@@ -440,7 +441,7 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
 ; -------------------------
 ; Eclipsing binary   
     if keyword_set(unpack_eclipse) then begin
-       outpath = projectpath+'sne/'
+       outpath = projectpath+'eclipse/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
        info = allinfo[where(strmatch(allinfo.object,'*TCas0*',/fold))]
@@ -459,9 +460,10 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
           sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
               tilt+"tilt.fits"
 
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          coadd_outfile = outpath+strjoin(strsplit(obj[these[0]],'/',/extract),$
+              '-')+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+          long_coadd, info[these].file, 2, outfil=coadd_outfile, /medscale, $
             box=0, check=0, /norej, /nosharp
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
@@ -474,7 +476,7 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
 ; -------------------------
 ; Transit   
     if keyword_set(unpack_transit) then begin
-       outpath = projectpath+'sne/'
+       outpath = projectpath+'transit/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
        info = allinfo[where(strmatch(allinfo.object,'*CoRoT*',/fold))]
