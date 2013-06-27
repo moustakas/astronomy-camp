@@ -27,15 +27,12 @@
 
 pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, chk=chk, $
-  unpack_wise=unpack_wise, unpack_sne=unpack_sne, unpack_vyaqr=unpack_vyaqr, $
-  unpack_ngc4559=unpack_ngc4559, unpack_lenticulars=unpack_lenticulars, $
-  unpack_pne=unpack_pne, unpack_rotationcurve=unpack_rotationcurve, $
-  clobber=clobber
+  unpack_kepler=unpack_kepler, unpack_ngc5273=unpack_ngc5273, $
+  unpack_sne=unpack_sne, unpack_eclipse=unpack_eclipse, $
+  unpack_transit=unpack_transit, clobber=clobber
 
-    unpack_something = (keyword_set(unpack_wise) or keyword_set(unpack_sne) or $
-        keyword_set(unpack_vyaqr) or keyword_set(unpack_ngc4559) or $
-        keyword_set(unpack_lenticulars) or keyword_set(unpack_pne) or $
-        keyword_set(unpack_rotationcurve)) ? 1 : 0
+    unpack_something = (keyword_set(unpack_kepler) or $
+        keyword_set(unpack_ngc5273) or keyword_set(unpack_sne)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2013/bok/'
     projectpath = datapath+'projects/'
@@ -47,7 +44,7 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
-    if (n_elements(night) eq 0) then night = []
+    if (n_elements(night) eq 0) then night = ['25jun13','26jun13']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -89,13 +86,13 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
              endif else begin
                 image = mrdfits(allfiles[iobj],0,hdr,/fscale,/silent)
 
-                ;sxaddpar, hdr, 'INSTRUME', 'bcspeclamps', ' instrument name'
-                ;sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
-                ;sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
+                sxaddpar, hdr, 'INSTRUME', 'bcspeclamps', ' instrument name'
+                sxaddpar, hdr, 'DISPERSE', '400/4889', ' disperser'
+                sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 
                 ; Overwrite any incorrect header info here.
-                if strmatch(allfiles[iobj],'*28jun11.0310.*',/fold) then $
-                    sxaddpar, hdr, 'APERTURE', '4.5'
+                ;if strmatch(allfiles[iobj],'*28jun11.0310.*',/fold) then $
+                ;    sxaddpar, hdr, 'APERTURE', '4.5'
 
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
@@ -166,10 +163,12 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
           case night[inight] of
-             '22jun11': keep = where($
-               (strmatch(new.filename,'*test*') eq 0) and $ ; Feige34/crap
-               (strmatch(new.filename,'*.000[1-6].*') eq 0) and $ ; focus
-               (strmatch(new.filename,'*.0045.*') eq 0)) ; arc w/ wrong slit
+             '25jun13': keep = where($
+               (strmatch(new.filename,'*test*') eq 0) and $
+               (strmatch(new.filename,'*.0079.*') eq 0) and $
+               (strmatch(new.filename,'*.008[0-2].*') eq 0))
+             '26jun13' : keep = where($
+               (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -251,7 +250,7 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
                   (stdplan.wave eq sensfunc_wave[iwave]) and $
                   (stdplan.grating eq sensfunc_grating[igrating]) and $
                   ; Remove any bad standards here.
-                  (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0) and $
+                  (strmatch(stdplan.filename,'*22jun11.0052*',/fold) eq 0), $
                   nkeep)
                 if (nkeep gt 0) then begin
                   stdplan_temp = stdplan[keep]
@@ -337,12 +336,148 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
     endif
 
 ; -------------------------
-; WISE    
-    if keyword_set(unpack_wise) then begin
-       outpath = projectpath+'wise/'
+; Kepler   
+    if keyword_set(unpack_kepler) then begin
+       outpath = projectpath+'kepler/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
-       info = allinfo[where(strmatch(allinfo.object,'*wise*',/fold))]
+       info = allinfo[where(strmatch(allinfo.object,'*KID*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; NGC5273   
+    if keyword_set(unpack_ngc5273) then begin
+       outpath = projectpath+'ngc5273/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*5273*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Supernovae   
+    if keyword_set(unpack_sne) then begin
+       outpath = projectpath+'sne/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*PSN*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Eclipsing binary   
+    if keyword_set(unpack_eclipse) then begin
+       outpath = projectpath+'sne/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*TCas0*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Transit   
+    if keyword_set(unpack_transit) then begin
+       outpath = projectpath+'sne/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*CoRoT*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
