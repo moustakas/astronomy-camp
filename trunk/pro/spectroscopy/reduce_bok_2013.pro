@@ -29,11 +29,13 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, chk=chk, $
   unpack_kepler=unpack_kepler, unpack_ngc5273=unpack_ngc5273, $
   unpack_sne=unpack_sne, unpack_eclipse=unpack_eclipse, $
-  unpack_transit=unpack_transit, clobber=clobber
+  unpack_transit=unpack_transit, unpack_standards=unpack_standards, $
+  clobber=clobber
 
     unpack_something = (keyword_set(unpack_kepler) or $
         keyword_set(unpack_ngc5273) or keyword_set(unpack_sne) or $
-        keyword_set(unpack_eclipse) or keyword_set(unpack_transit)) ? 1 : 0
+        keyword_set(unpack_eclipse) or keyword_set(unpack_transit) or $
+        keyword_set(unpack_standards)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2013/bok/'
     projectpath = datapath+'projects/'
@@ -45,7 +47,7 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
-    if (n_elements(night) eq 0) then night = ['25jun13','26jun13']
+    if (n_elements(night) eq 0) then night = ['25jun13','26jun13','27jun13']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -170,6 +172,11 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
                (strmatch(new.filename,'*.008[0-2].*') eq 0))
              '26jun13' : keep = where($
                (strmatch(new.filename,'*test*') eq 0))
+             '27jun13' : keep = where($
+               (strmatch(new.filename,'*test*') eq 0) and $
+               (strmatch(new.filename,'*.002[5-6].*') eq 0) and $
+               (strmatch(new.filename,'*.004[6-7].*') eq 0) and $
+               (strmatch(new.filename,'*.0078.*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -410,7 +417,8 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
        outpath = projectpath+'sne/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
-       info = allinfo[where(strmatch(allinfo.object,'*PSN*',/fold))]
+       info = allinfo[where(strmatch(allinfo.object,'*PSN*',/fold) or $
+           strmatch(allinfo.object,'*UGC*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
@@ -480,6 +488,41 @@ pro reduce_bok_2013, night, preproc=preproc, plan=plan, calib=calib, $
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
        info = allinfo[where(strmatch(allinfo.object,'*CoRoT*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2013_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Standards  
+    if keyword_set(unpack_standards) then begin
+       outpath = projectpath+'standards/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*Vega*',/fold) or $
+           strmatch(allinfo.object,'*Cyg*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
