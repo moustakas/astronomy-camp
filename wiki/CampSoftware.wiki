@@ -17,7 +17,7 @@ Other versions: http://iraf.noao.edu/, http://www.stsci.edu/institute/software_h
   * GILDAS, for ARO 12m radio data. Download: http://www.iram.fr/IRAMFR/GILDAS/
 Documentation: http://aro.as.arizona.edu/docs/analysis_manuals.htm
 
-  * Octave (Free Matlab alternative):
+
 
 = Commercial Software =
 
