@@ -23,4 +23,4 @@ Documentation: http://aro.as.arizona.edu/docs/analysis_manuals.htm
 
   * MaximDL, http://www.cyanogen.com/maxim_main.php
 
-  *IDL, http://www.exelisvis.com/ProductsServices/IDL.aspx/, Required by the Bok Spectroscopy Reduction package. Extra documentation: http://www.idlcoyote.com/.
+  * IDL, http://www.exelisvis.com/ProductsServices/IDL.aspx/, Required by the Bok Spectroscopy Reduction package. Extra documentation: http://www.idlcoyote.com/.
