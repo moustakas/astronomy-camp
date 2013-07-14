@@ -11,7 +11,7 @@ Much of this software requires a Unix/Linux environment. Usually it works in bot
 
 = Free Software =
 
-  * IRAF/Pyraf. Easy single download: ssb.stsci.edu/ureka/ 
+  * IRAF/Pyraf. Easy single download: http://ssb.stsci.edu/ureka/ 
 Other versions: http://iraf.noao.edu/, http://www.stsci.edu/institute/software_hardware/pyraf
 
   * GILDAS, for ARO 12m radio data. Download: http://www.iram.fr/IRAMFR/GILDAS/
