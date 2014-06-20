@@ -27,17 +27,9 @@
 
 pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, chk=chk, $
-  unpack_kepler=unpack_kepler, unpack_ngc5273=unpack_ngc5273, $
-  unpack_sne=unpack_sne, unpack_eclipse=unpack_eclipse, $
-  unpack_transit=unpack_transit, unpack_standards=unpack_standards, $
-  clobber=clobber
+  unpack_sne=unpack_sne, clobber=clobber
 
-    ; !!!!!!!UPDATE - need to update this to reflect the projects done during
-    ;                 ATC2014.
-    unpack_something = (keyword_set(unpack_kepler) or $
-        keyword_set(unpack_ngc5273) or keyword_set(unpack_sne) or $
-        keyword_set(unpack_eclipse) or keyword_set(unpack_transit) or $
-        keyword_set(unpack_standards)) ? 1 : 0
+    unpack_something = (keyword_set(unpack_sne)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2014/bok/'
     projectpath = datapath+'projects/'
@@ -49,8 +41,7 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
-    ;!!!!!!UPDATE - update this to reflect the nights we observed during ATC2014
-    if (n_elements(night) eq 0) then night = ['25jun13','26jun13','27jun13']
+    if (n_elements(night) eq 0) then night = ['19jun14']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -97,8 +88,148 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 
                 ; Overwrite any incorrect header info here.
-                ;if strmatch(allfiles[iobj],'*28jun11.0310.*',/fold) then $
-                ;    sxaddpar, hdr, 'APERTURE', '4.5'
+                if strmatch(allfiles[iobj],'*19jun14.002[1-4].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.002[7-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+                if strmatch(allfiles[iobj],'*19jun14.0029.*',/fold) then $
+                    sxaddpar, hdr, 'IMAGETYP', 'comp    '
+
+                if strmatch(allfiles[iobj],'*19jun14.003[1-3].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.003[4-6].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'BD+322642'
+
+                if strmatch(allfiles[iobj],'*19jun14.003[7-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.004[3-6].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.005[0-2].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.005[6-8].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.006[5-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+                if strmatch(allfiles[iobj],'*19jun14.0070.*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.007[1-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'flat'
+                if strmatch(allfiles[iobj],'*19jun14.0080.*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'flat'
+
+                if strmatch(allfiles[iobj],'*19jun14.008[5-7].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+
+                if strmatch(allfiles[iobj],'*19jun14.008[8-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'zero'
+                if strmatch(allfiles[iobj],'*19jun14.009*.*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'zero'
+                if strmatch(allfiles[iobj],'*19jun14.010[0-7].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'zero'
+
+                ; Forgot to click 'Enable telescope' for half of the night, so
+                ; we have to manually put in the RA, DEC, AIRMASS, etc....
+                if strmatch(allfiles[iobj],'*19jun14.000[0-9].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+                if strmatch(allfiles[iobj],'*19jun14.001[0-9].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+                if strmatch(allfiles[iobj],'*19jun14.002[0-9].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+                if strmatch(allfiles[iobj],'*19jun14.003[0-9].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+                if strmatch(allfiles[iobj],'*19jun14.004[0-9].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+                if strmatch(allfiles[iobj],'*19jun14.005[0-5].*',/fold) then $
+                    sxaddpar, hdr, 'EPOCH', 2000.0
+
+                if strmatch(allfiles[iobj],'*19jun14.0021.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.5
+                if strmatch(allfiles[iobj],'*19jun14.0022.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.5
+                if strmatch(allfiles[iobj],'*19jun14.0023.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.5
+                if strmatch(allfiles[iobj],'*19jun14.0024.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.5
+                if strmatch(allfiles[iobj],'*19jun14.0025.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.51
+                if strmatch(allfiles[iobj],'*19jun14.0026.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.53
+                if strmatch(allfiles[iobj],'*19jun14.0027.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.57
+                if strmatch(allfiles[iobj],'*19jun14.0028.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.57
+                if strmatch(allfiles[iobj],'*19jun14.0029.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.57
+                if strmatch(allfiles[iobj],'*19jun14.0030.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.58
+                if strmatch(allfiles[iobj],'*19jun14.0031.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.62
+                if strmatch(allfiles[iobj],'*19jun14.0032.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.62
+                if strmatch(allfiles[iobj],'*19jun14.0033.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.62
+
+                if strmatch(allfiles[iobj],'*19jun14.002[1-9].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '12:24:30.98 '
+                if strmatch(allfiles[iobj],'*19jun14.002[1-9].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+75:32:08.60 '
+                if strmatch(allfiles[iobj],'*19jun14.003[0-3].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '12:24:30.98 '
+                if strmatch(allfiles[iobj],'*19jun14.003[0-3].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+75:32:08.60 '
+
+                if strmatch(allfiles[iobj],'*19jun14.003[4-9].*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.14
+                if strmatch(allfiles[iobj],'*19jun14.003[4-9].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '15:54:12.33 '
+                if strmatch(allfiles[iobj],'*19jun14.003[4-9].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+32:20:33.60 '
+
+                if strmatch(allfiles[iobj],'*19jun14.004[0-6].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '16:55:45.0 '
+                if strmatch(allfiles[iobj],'*19jun14.004[0-6].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+26:15:29.0 '
+
+                if strmatch(allfiles[iobj],'*19jun14.0040.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.01
+                if strmatch(allfiles[iobj],'*19jun14.0041.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.01
+                if strmatch(allfiles[iobj],'*19jun14.0042.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.01
+                if strmatch(allfiles[iobj],'*19jun14.004[3-6].*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.02
+
+                if strmatch(allfiles[iobj],'*19jun14.004[7-9].*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.09
+                if strmatch(allfiles[iobj],'*19jun14.004[7-9].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '15:54:12.33 '
+                if strmatch(allfiles[iobj],'*19jun14.004[7-9].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+32:20:33.60 '
+                if strmatch(allfiles[iobj],'*19jun14.005[0-2].*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.09
+                if strmatch(allfiles[iobj],'*19jun14.005[0-2].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '15:54:12.33 '
+                if strmatch(allfiles[iobj],'*19jun14.005[0-2].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+32:20:33.60 '
+
+                if strmatch(allfiles[iobj],'*19jun14.005[3-5].*',/fold) then $
+                    sxaddpar, hdr, 'RA', '15:57:29.91 '
+                if strmatch(allfiles[iobj],'*19jun14.005[3-5].*',/fold) then $
+                    sxaddpar, hdr, 'DEC', '+01:06:33.74 '
+
+                if strmatch(allfiles[iobj],'*19jun14.0053.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.53
+                if strmatch(allfiles[iobj],'*19jun14.0054.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.56
+                if strmatch(allfiles[iobj],'*19jun14.0055.*',/fold) then $
+                    sxaddpar, hdr, 'AIRMASS', 1.73
 
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
@@ -169,18 +300,11 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
           case night[inight] of
-             ;!!!!!!!UPDATE - Update to reflect errors in data during ATC2014
-             '25jun13': keep = where($
+             '19jun14': keep = where($
                (strmatch(new.filename,'*test*') eq 0) and $
-               (strmatch(new.filename,'*.0079.*') eq 0) and $
-               (strmatch(new.filename,'*.008[0-2].*') eq 0))
-             '26jun13' : keep = where($
-               (strmatch(new.filename,'*test*') eq 0))
-             '27jun13' : keep = where($
-               (strmatch(new.filename,'*test*') eq 0) and $
-               (strmatch(new.filename,'*.002[5-6].*') eq 0) and $
-               (strmatch(new.filename,'*.004[6-7].*') eq 0) and $
-               (strmatch(new.filename,'*.0078.*') eq 0))
+               (strmatch(new.filename,'*.000[1-9].*') eq 0) and $
+               (strmatch(new.filename,'*.001[0-9].*') eq 0) and $
+               (strmatch(new.filename,'*.0020.*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
@@ -348,189 +472,14 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
        allinfo = aycamp_forage(scifiles)
     endif
 
-;!!!!!!!!!!!!UPDATE - need to add/remove/modify projects below to reflect the
-;                     projects done during ATC2014
-
-; -------------------------
-; Kepler   
-    if keyword_set(unpack_kepler) then begin
-       outpath = projectpath+'kepler/'
-       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
-       
-       info = allinfo[where(strmatch(allinfo.object,'*KID*',/fold))]
-       obj = strcompress(info.object,/remove)
-
-       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
-       grp = allgrp[uniq(allgrp,sort(allgrp))]
-
-       for ig = 0, n_elements(grp)-1 do begin
-          these = where(grp[ig] eq allgrp,nthese)
-
-          aperture = strcompress(info[these[0]].aperture,/remove)
-          tilt = strcompress(info[these[0]].tiltpos,/remove)
-          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
-              /remove),'/',/extract),'.')
-          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
-              tilt+"tilt.fits"
-
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
-          aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
-; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
-       endfor
-    endif
-
-; -------------------------
-; NGC5273   
-    if keyword_set(unpack_ngc5273) then begin
-       outpath = projectpath+'ngc5273/'
-       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
-       
-       info = allinfo[where(strmatch(allinfo.object,'*5273*',/fold))]
-       obj = strcompress(info.object,/remove)
-
-       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
-       grp = allgrp[uniq(allgrp,sort(allgrp))]
-
-       for ig = 0, n_elements(grp)-1 do begin
-          these = where(grp[ig] eq allgrp,nthese)
-
-          aperture = strcompress(info[these[0]].aperture,/remove)
-          tilt = strcompress(info[these[0]].tiltpos,/remove)
-          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
-              /remove),'/',/extract),'.')
-          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
-              tilt+"tilt.fits"
-
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
-          aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
-; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
-       endfor
-    endif
-
 ; -------------------------
 ; Supernovae   
     if keyword_set(unpack_sne) then begin
        outpath = projectpath+'sne/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
-       info = allinfo[where(strmatch(allinfo.object,'*PSN*',/fold) or $
-           strmatch(allinfo.object,'*UGC*',/fold))]
-       obj = strcompress(info.object,/remove)
-
-       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
-       grp = allgrp[uniq(allgrp,sort(allgrp))]
-
-       for ig = 0, n_elements(grp)-1 do begin
-          these = where(grp[ig] eq allgrp,nthese)
-
-          aperture = strcompress(info[these[0]].aperture,/remove)
-          tilt = strcompress(info[these[0]].tiltpos,/remove)
-          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
-              /remove),'/',/extract),'.')
-          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
-              tilt+"tilt.fits"
-
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
-          aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
-; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
-       endfor
-    endif
-
-; -------------------------
-; Eclipsing binary   
-    if keyword_set(unpack_eclipse) then begin
-       outpath = projectpath+'eclipse/'
-       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
-       
-       info = allinfo[where(strmatch(allinfo.object,'*TCas0*',/fold))]
-       obj = strcompress(info.object,/remove)
-
-       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
-       grp = allgrp[uniq(allgrp,sort(allgrp))]
-
-       for ig = 0, n_elements(grp)-1 do begin
-          these = where(grp[ig] eq allgrp,nthese)
-
-          aperture = strcompress(info[these[0]].aperture,/remove)
-          tilt = strcompress(info[these[0]].tiltpos,/remove)
-          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
-              /remove),'/',/extract),'.')
-          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
-              tilt+"tilt.fits"
-
-          coadd_outfile = outpath+strjoin(strsplit(obj[these[0]],'/',/extract),$
-              '-')+'.fits'
-          aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 2, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
-; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
-       endfor
-    endif
-
-; -------------------------
-; Transit   
-    if keyword_set(unpack_transit) then begin
-       outpath = projectpath+'transit/'
-       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
-       
-       info = allinfo[where(strmatch(allinfo.object,'*CoRoT*',/fold))]
-       obj = strcompress(info.object,/remove)
-
-       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
-       grp = allgrp[uniq(allgrp,sort(allgrp))]
-
-       for ig = 0, n_elements(grp)-1 do begin
-          these = where(grp[ig] eq allgrp,nthese)
-
-          aperture = strcompress(info[these[0]].aperture,/remove)
-          tilt = strcompress(info[these[0]].tiltpos,/remove)
-          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
-              /remove),'/',/extract),'.')
-          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
-              tilt+"tilt.fits"
-
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
-          aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
-; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
-       endfor
-    endif
-
-; -------------------------
-; Standards  
-    if keyword_set(unpack_standards) then begin
-       outpath = projectpath+'standards/'
-       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
-       
-       info = allinfo[where(strmatch(allinfo.object,'*Vega*',/fold) or $
-           strmatch(allinfo.object,'*Cyg*',/fold))]
+       info = allinfo[where(strmatch(allinfo.object,'*NGC*',/fold) or $
+           strmatch(allinfo.object,'*PGC*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
