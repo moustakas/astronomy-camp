@@ -41,7 +41,7 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
-    if (n_elements(night) eq 0) then night = ['19jun14']
+    if (n_elements(night) eq 0) then night = ['22jun14']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -231,6 +231,19 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
                 if strmatch(allfiles[iobj],'*19jun14.0055.*',/fold) then $
                     sxaddpar, hdr, 'AIRMASS', 1.73
 
+                ; For the night of 22 June 14
+
+                if strmatch(allfiles[iobj],'*22jun14*',/fold) then $
+                    sxaddpar, hdr, 'TILTPOS', '6.66    '
+
+                if strmatch(allfiles[iobj],'*22jun14.005[2-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'BD-003871'
+                if strmatch(allfiles[iobj],'*22jun14.006[0-1].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'BD-003871'
+
+                if strmatch(allfiles[iobj],'*22jun14.007[2-9].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'Laetitia'
+
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
                    dims = size(image,/dim)
@@ -305,6 +318,8 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
                (strmatch(new.filename,'*.000[1-9].*') eq 0) and $
                (strmatch(new.filename,'*.001[0-9].*') eq 0) and $
                (strmatch(new.filename,'*.0020.*') eq 0))
+             '22jun14': keep = where($
+               (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
           endcase          
           new = new[keep]
