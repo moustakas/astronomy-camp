@@ -31,13 +31,13 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
   unpack_asteroids=unpack_asteroids, unpack_titan=unpack_titan, $
   unpack_irs48=unpack_irs48, unpack_galaxies=unpack_galaxies, $
   unpack_planetaries=unpack_planetaries, unpack_comet=unpack_comet, $
-  clobber=clobber
+  unpack_lbvs=unpack_lbvs, clobber=clobber
 
     unpack_something = (keyword_set(unpack_sne) or $
         keyword_set(unpack_kepler) or keyword_set(unpack_asteroids) or $
         keyword_set(unpack_titan) or keyword_set(unpack_irs48) or $
         keyword_set(unpack_galaxies) or keyword_set(unpack_planetaries) or $
-        keyword_set(unpack_comet)) ? 1 : 0
+        keyword_set(unpack_comet) or keyword_set(unpack_lbvs)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2014/bok/'
     projectpath = datapath+'projects/'
@@ -50,7 +50,7 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
     if (n_elements(night) eq 0) then night = ['19jun14','22jun14','23jun14', $
-        '24jun14']
+        '24jun14','25jun14']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -331,13 +331,14 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
           endif
           long_plan, '*.fits.gz', 'Raw/', planfile=planfile
           old = yanny_readone(planfile,hdr=hdr,/anony)
-          if night[inight] ne '24jun14' then $
-            new = aycamp_find_calspec(old,radius=radius) $
-          else begin
+          ; Change this up slightly from previous years because we forgot to
+          ; observe standards on a few nights.
+          if (night[inight] eq '24jun14') or (night[inight] eq '25jun14') then begin
             nobj = n_elements(old)
             starinfo = replicate({starfile: '...', starname: '...'},nobj)
             new = struct_addtags(old,starinfo)
-          endelse
+          endif else $
+            new = aycamp_find_calspec(old,radius=radius)
           twi = where(strmatch(new.target,'*skyflat*'),ntwi)
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
@@ -352,6 +353,8 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
              '23jun14': keep = where($
                (strmatch(new.filename,'*test*') eq 0))
              '24jun14': keep = where($
+               (strmatch(new.filename,'*test*') eq 0))
+             '25jun14': keep = where($
                (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
           endcase          
@@ -705,6 +708,8 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
            strmatch(allinfo.object,'*M32*',/fold) or $
            strmatch(allinfo.object,'*M110*',/fold) or $
            strmatch(allinfo.object,'*NGC6745*',/fold) or $
+           strmatch(allinfo.object,'*NGC 7062*',/fold) or $
+           strmatch(allinfo.object,'*NGC 7331*',/fold) or $
            strmatch(allinfo.object,'*NGC14*',/fold))]
        obj = strcompress(info.object,/remove)
 
@@ -775,6 +780,42 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
        info = allinfo[where(strmatch(allinfo.object,'*C2012 K1 PANSTARRS*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2014_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+            box=0, check=0, /norej, /nosharp
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Luminous Blue Variables
+    if keyword_set(unpack_lbvs) then begin
+       outpath = projectpath+'lbvs/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*P Cygni*',/fold) or $
+           strmatch(allinfo.object,'*SN12*',/fold) or $
+           strmatch(allinfo.object,'*HD 168607*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
