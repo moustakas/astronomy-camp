@@ -708,7 +708,7 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
            strmatch(allinfo.object,'*M32*',/fold) or $
            strmatch(allinfo.object,'*M110*',/fold) or $
            strmatch(allinfo.object,'*NGC6745*',/fold) or $
-           strmatch(allinfo.object,'*NGC 7062*',/fold) or $
+           strmatch(allinfo.object,'*NGC 7052*',/fold) or $
            strmatch(allinfo.object,'*NGC 7331*',/fold) or $
            strmatch(allinfo.object,'*NGC14*',/fold))]
        obj = strcompress(info.object,/remove)
@@ -739,7 +739,7 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
     endif
 
 ; -------------------------
-; Planetary Nebulae ---- UPDATE! Reduction not done yet!
+; Planetary Nebulae
     if keyword_set(unpack_planetaries) then begin
        outpath = projectpath+'planetaries/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
@@ -763,8 +763,8 @@ pro reduce_bok_2014, night, preproc=preproc, plan=plan, calib=calib, $
 
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
+          long_coadd, info[these].file, 2, outfil=coadd_outfile, /medscale, $
+            /box, check=0, /norej, /nosharp
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
