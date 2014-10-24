@@ -447,6 +447,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
 ; set the objid (need to figure these out individually using
@@ -481,6 +489,13 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 ; coadd each spectrum/aperture individually
        nap = 5
        for jj = 0, nap-1 do begin
+          aperture = strcompress(info[0].aperture,/remove)
+          tilt = strcompress(info[0].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[0].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj+'_aper'+string(jj+1,format='(I0)')+'.fits'
           long_coadd, info.file, jj+1, outfil=coadd_outfile, /medscale, $
             box=0, check=0, /norej;, /nosharp
@@ -504,6 +519,13 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
        obj = 'VyAqr'
        
        for jj = 0, nobj-1 do begin
+          aperture = strcompress(info[0].aperture,/remove)
+          tilt = strcompress(info[0].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[0].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj+'_spec'+string(jj+1,format='(I2.2)')+'.fits'
           long_coadd, info.file, 1, outfil=coadd_outfile, /medscale, $
             box=0, check=0, /norej;, /nosharp
@@ -541,6 +563,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -574,6 +604,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -605,6 +643,14 @@ pro reduce_bok_2011, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
