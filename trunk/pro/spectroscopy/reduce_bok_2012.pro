@@ -27,7 +27,7 @@
 pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
         standards=standards, sensfunc=sensfunc, science=science, $
         clobber=clobber, chk=chk, unpack_blackhole=unpack_blackhole, $
-        unpack_test=unpack_test
+        unpack_galaxies=unpack_galaxies, unpack_test=unpack_test
 ;perhaps change the unpack keywords to "unpack=unpack, _EXTRA=extra"?
 ; where it would be called with "... /unpack, /sne", for example.
 ; this way, the code doesn't have to be tied to an individual year's
@@ -35,7 +35,7 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 ; procedure anyway...
   
     unpack_something = (keyword_set(unpack_blackhole) or $
-        keyword_set(unpack_test))
+        keyword_set(unpack_test) or keyword_set(unpack_galaxies))
   
   ;check if any of the step keywords are defined?  if not, complain, exit.
 
@@ -58,8 +58,12 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
         'Bad pixel file '+badpixfile+' not found'
 ;   sensfuncfile = datapatha+'sensfunc_2012.fits'
 
+;   Exclude 26jun12 right now because it used a high resolution grating that
+;   xidl doesn't know about.
+;    if (n_elements(night) eq 0) then night = ['21jun12','22jun12','23jun12', $
+;        '26jun12','27jun12','01jul12']
     if (n_elements(night) eq 0) then night = ['21jun12','22jun12','23jun12', $
-        '26jun12','27jun12','01jul12']
+        '27jun12','01jul12']
     nnight = n_elements(night)
   
 
@@ -408,6 +412,14 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -439,6 +451,14 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -453,14 +473,20 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
     endif
 
 ; ------------------------------------------------
-; The test data from the second Advanced Camp.
+; The galaxies.
 
-    if keyword_set(unpack_test) then begin
-       outpath = projectpath+'test/'
+    if keyword_set(unpack_galaxies) then begin
+       outpath = projectpath+'galaxies/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
 
        info = allinfo[where($
-         strmatch(allinfo.object,'*RandomStar*',/fold))]
+         strmatch(allinfo.object,'*NGC108*',/fold) or $
+         strmatch(allinfo.object,'*ngc6703*',/fold) or $
+         strmatch(allinfo.object,'*ngc5353*',/fold) or $
+         strmatch(allinfo.object,'*ngc5701*',/fold) or $
+         strmatch(allinfo.object,'*ngc5370*',/fold) or $
+         strmatch(allinfo.object,'*ngc7248*',/fold) or $
+         strmatch(allinfo.object,'*ngc43*',/fold))]
        obj = strcompress(info.object,/remove)
 ;      aycamp_niceprint, info.file, obj, info.ra, info.dec
 
@@ -469,6 +495,14 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
 
        for ig = 0, n_elements(grp)-1 do begin
           these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2011_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
           long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
@@ -477,7 +511,8 @@ pro reduce_bok_2012, night, preproc=preproc, plan=plan, calib=calib, $
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
             sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+          aycamp_plotspec, outfile, /postscript, scale=1D16, $
+            objname=obj[these[0]]
        endfor
     endif
 
