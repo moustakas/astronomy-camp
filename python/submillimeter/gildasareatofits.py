@@ -15,20 +15,35 @@ started at ATC2011, revised at ATC II, 2012,  douglase@bu.edu
 
 #import packages
 import numpy
-import pyfits
+import astropy.io.fits as pyfits
 import time
 
-# example input criteria:
-file = "sdd_fb12.aac_020_800x800.area"
-
-target_name="M13, Eagle Nebula"
-dir="/Users/edouglas/Documents/astronomycamp/atc2012/"
-s=dir+file
-
-RA =274.7  #target position, degrees RA,  18:19:32.9 -13:47:33.5
-DEC = -13.7790277778
-
 def areatofits(file,s,target_name,RA,DEC):
+    '''
+    PARAMETERS:
+    file:
+         a .area file from CLASS
+    s:
+        path to the file
+    target_name:
+        object identifier
+    RA:
+        Right ascension [degrees]
+    DEC:
+       Declination [degrees]
+    ------
+    EXAMPLE:
+    
+        file = "sdd_fb12.aac_020_800x800.area"
+    
+        target_name="M13, Eagle Nebula"
+        dir="/Users/edouglas/Documents/astronomycamp/atc2012/"
+        s=dir+file
+    
+        RA =274.7  #target position, degrees RA,  18:19:32.9 -13:47:33.5
+        DEC = -13.7790277778
+    areatofits(file,s,target_name,RA,DEC) 
+    '''
     area=numpy.genfromtxt(s, comments="!")
 
     numel = numpy.shape(area)[0]
@@ -85,4 +100,3 @@ def areatofits(file,s,target_name,RA,DEC):
     hdulist.writeto(file+time.asctime()+'.fits')
 
 
-areatofits(file,s,target_name,RA,DEC)
