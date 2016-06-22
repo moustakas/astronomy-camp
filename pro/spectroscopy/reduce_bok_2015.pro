@@ -27,11 +27,13 @@
 
 pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
   standards=standards, science=science, sensfunc=sensfunc, chk=chk, $
-  unpack_sne=unpack_sne, unpack_kepler=unpack_kepler, $
-  unpack_galaxies=unpack_galaxies, clobber=clobber
+  unpack_sne=unpack_sne, unpack_comet=unpack_comet, $
+  unpack_expuniv=unpack_expuniv, unpack_rotation=unpack_rotation, $
+  clobber=clobber
 
-    unpack_something = (keyword_set(unpack_sne) or keyword_set(unpack_kepler) $
-        or keyword_set(unpack_galaxies)) ? 1 : 0
+    unpack_something = (keyword_set(unpack_sne) or $
+        keyword_set(unpack_comet) or keyword_set(unpack_expuniv) or $
+        keyword_set(unpack_rotation)) ? 1 : 0
 
     datapath = getenv('AYCAMP_DATA')+'2015/bok/'
     projectpath = datapath+'projects/'
@@ -43,7 +45,7 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
       'Bad pixel file '+badpixfile+' not found'
 ;    sensfuncfile = datapath+'sensfunc_2013.fits'
 
-    if (n_elements(night) eq 0) then night = ['?jun15']
+    if (n_elements(night) eq 0) then night = ['19jun15','20jun15','23jun15']
     nnight = n_elements(night)
 
 ; ##################################################
@@ -90,8 +92,8 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
                 sxaddpar, hdr, 'APERTURE', '2.5', ' slit width'
 
                 ; Overwrite any incorrect header info here.
-                if strmatch(allfiles[iobj],'*19jun14.002[1-4].*',/fold) then $
-                    sxaddpar, hdr, 'OBJECT', 'he/ar/ne'
+                if strmatch(allfiles[iobj],'*23jun15.003[3-8].*',/fold) then $
+                    sxaddpar, hdr, 'OBJECT', 'unknown'
 
                 type = sxpar(hdr,'imagetyp')
                 if (strlowcase(strtrim(type,2)) eq 'object') then begin
@@ -160,7 +162,7 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
           ; Change this up slightly from previous years because we forgot to
           ; observe standards on a few nights. Nights where there were no 
           ; standards observed go in the first if statement.
-          if (night[inight] eq '?jun15') then begin
+          if (night[inight] eq '23jun15') then begin
             nobj = n_elements(old)
             starinfo = replicate({starfile: '...', starname: '...'},nobj)
             new = struct_addtags(old,starinfo)
@@ -170,7 +172,12 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
           if (ntwi ne 0) then new[twi].flavor = 'twiflat'
 ; remove crap exposures
           case night[inight] of
-             '?jun15': keep = where($
+             '19jun15': keep = where($
+               (strmatch(new.filename,'*test*') eq 0))
+             '20jun15': keep = where($
+               (strmatch(new.filename,'*test*') eq 0) and $
+               (strmatch(new.filename,'*0064*') eq 0))
+             '23jun15': keep = where($
                (strmatch(new.filename,'*test*') eq 0))
              else: message, 'Code me up!'
           endcase          
@@ -254,7 +261,7 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
                   (stdplan.grating eq sensfunc_grating[igrating]) and $
                   ; Remove any bad standards here.
                   ;!!!!!!!UPDATE - remove any ATC2015 bad standards
-                  (strmatch(stdplan.filename,'*?jun15.000?*',/fold) eq 0), $
+                  (strmatch(stdplan.filename,'*23jun15.003*',/fold) eq 0), $
                   nkeep)
                 if (nkeep gt 0) then begin
                   stdplan_temp = stdplan[keep]
@@ -364,8 +371,13 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
 
           coadd_outfile = outpath+obj[these[0]]+'.fits'
           aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
+          if obj[these[0]] eq 'SN3' then begin
+            long_coadd, info[these].file, 2, outfil=coadd_outfile, /medscale, $
+              box=0, check=0, /norej, /nosharp
+          endif else begin
+            long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+              box=0, check=0, /norej, /nosharp
+          endelse
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
           outfile = repstr(coadd_outfile,'.fits','_f.fits')
           aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
@@ -375,12 +387,52 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
     endif
 
 ; -------------------------
-; Kepler  
-    if keyword_set(unpack_kepler) then begin
-       outpath = projectpath+'kepler/'
+; Comet Lovejoy   
+    if keyword_set(unpack_comet) then begin
+       outpath = projectpath+'comet/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
-       info = allinfo[where(strmatch(allinfo.object,'*KID*',/fold))]
+       info = allinfo[where(strmatch(allinfo.object,'*comet*',/fold) or $
+           strmatch(allinfo.object, '*Comet*',/fold))]
+       obj = strcompress(info.object,/remove)
+
+       allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
+       grp = allgrp[uniq(allgrp,sort(allgrp))]
+
+       for ig = 0, n_elements(grp)-1 do begin
+          these = where(grp[ig] eq allgrp,nthese)
+
+          aperture = strcompress(info[these[0]].aperture,/remove)
+          tilt = strcompress(info[these[0]].tiltpos,/remove)
+          grating = strjoin(strsplit(strcompress(info[these[0]].disperse, $
+              /remove),'/',/extract),'.')
+          sensfuncfile = "sensfunc_2015_"+grating+"grating_"+aperture+"slit_"+ $
+              tilt+"tilt.fits"
+
+          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          aycamp_niceprint, info[these].file, obj[these]
+          if obj[these[0]] eq 'Cometlovejoytail' then begin
+            long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+              box=1, check=0, /norej, /nosharp
+          endif else begin
+            long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+              box=0, check=0, /norej, /nosharp
+          endelse
+; flux calibrate and write out the final 1D FITS and ASCII spectra
+          outfile = repstr(coadd_outfile,'.fits','_f.fits')
+          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
+            sensfuncfile=sensfuncfile, /clobber, /writetxt
+          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
+       endfor
+    endif
+
+; -------------------------
+; Expansion of the Universe.
+    if keyword_set(unpack_expuniv) then begin
+       outpath = projectpath+'expuniv/'
+       if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
+       
+       info = allinfo[where(strmatch(allinfo.object,'*NGC6015*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
@@ -409,19 +461,13 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
     endif
 
 ; -------------------------
-; Galaxies
-    if keyword_set(unpack_galaxies) then begin
-       outpath = projectpath+'galaxies/'
+; Galaxy rotation curves   
+    if keyword_set(unpack_rotation) then begin
+       outpath = projectpath+'rotation/'
        if (file_test(outpath,/dir) eq 0) then spawn, 'mkdir -p '+outpath, /sh
        
-       info = allinfo[where(strmatch(allinfo.object,'*NGC7318*',/fold) or $
-           strmatch(allinfo.object,'*NGC6946*',/fold) or $
-           strmatch(allinfo.object,'*M32*',/fold) or $
-           strmatch(allinfo.object,'*M110*',/fold) or $
-           strmatch(allinfo.object,'*NGC6745*',/fold) or $
-           strmatch(allinfo.object,'*NGC 7052*',/fold) or $
-           strmatch(allinfo.object,'*NGC 7331*',/fold) or $
-           strmatch(allinfo.object,'*NGC14*',/fold))]
+       info = allinfo[where(strmatch(allinfo.object,'*M82*',/fold) or $
+           strmatch(allinfo.object, '*NGC5949*',/fold))]
        obj = strcompress(info.object,/remove)
 
        allgrp = spheregroup(15D*hms2dec(info.ra),hms2dec(info.dec),15D/3600.0)
@@ -437,17 +483,29 @@ pro reduce_bok_2015, night, preproc=preproc, plan=plan, calib=calib, $
           sensfuncfile = "sensfunc_2015_"+grating+"grating_"+aperture+"slit_"+ $
               tilt+"tilt.fits"
 
-          coadd_outfile = outpath+obj[these[0]]+'.fits'
+          coadd_outfile = outpath+obj[these[0]]
           aycamp_niceprint, info[these].file, obj[these]
-          long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
-            box=0, check=0, /norej, /nosharp
+          if obj[these[0]] eq 'M82' then begin
+            for is=1, 12 do begin
+              long_coadd, info[these].file, is, $
+                outfil=coadd_outfile+"_"+strtrim(string(is),1)+'.fits', $
+                /medscale, box=1, check=0, /norej, /nosharp
+              outfile = repstr(coadd_outfile+"_"+strtrim(string(is),1)+'.fits',$
+                  '.fits','_f.fits')
+              aycamp_fluxcalibrate, coadd_outfile+"_"+strtrim(string(is),1)+ $
+                  '.fits', outfile=outfile, sensfuncfile=sensfuncfile, $
+                  /clobber, /writetxt
+              aycamp_plotspec, outfile, /postscript, scale=1D16, $
+                  objname=obj[these[0]]
+            endfor
+          endif else begin
+            long_coadd, info[these].file, 1, outfil=coadd_outfile, /medscale, $
+              box=0, check=0, /norej, /nosharp
+          endelse
 ; flux calibrate and write out the final 1D FITS and ASCII spectra
-          outfile = repstr(coadd_outfile,'.fits','_f.fits')
-          aycamp_fluxcalibrate, coadd_outfile, outfile=outfile, $
-            sensfuncfile=sensfuncfile, /clobber, /writetxt
-          aycamp_plotspec, outfile, /postscript, scale=1D16, objname=obj[these[0]]
        endfor
     endif
+
 
 return
 end
