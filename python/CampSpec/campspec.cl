@@ -1,4 +1,4 @@
-# the original Camp Spec by C Kulesa et al
+# the original CampSpec IRAF script by C Kulesa et al
 
 procedure campspec (images, output)
 
