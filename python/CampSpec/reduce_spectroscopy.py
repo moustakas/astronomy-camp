@@ -1,37 +1,57 @@
 #!/usr/bin/env python
 
-from pyraf import iraf
+import os
+
+# Delete some directories/files from previous runs.
+
+os.system("rm -rf login.cl pyraf database uparm")
+os.system("mkiraf")
+
+# Now load IRAF
+
+import pyraf.iraf as iraf
 
 # Load the packages we might need.
 
 iraf.noao(_doprint=0)
 iraf.onedspec(_doprint=0)
 iraf.twodspec(_doprint=0)
-iraf.twodspec.apextract(_doprint=0)
+iraf.apextract(_doprint=0)
+iraf.unlearn(iraf.apall)
+
+# The name of the science file.
+
+filename = 'vega_9.3narrow.fit'
+extracted_filename = 'vega_9.3narrow.ms.fits'
+calibrated_filename = 'vega_9.3narrow.calib.fits'
+
+# Delete previous results.
+
+os.system("rm "+extracted_filename+" "+calibrated_filename)
 
 # Make sure that the dispersion axis is in the header.
 
-iraf.hedit("science_exposure_filename", DISPAXIS=1, add+)
-
-# TODO: Bias subtraction? Flatfielding?
+iraf.hedit(images=[filename], fields=["DISPAXIS"], value=["1"], add="Yes")
 
 # Run the spectral extraction program.
 
-iraf.twodspec.apextract.apall("science_exposure_filename", find=False, \
-        recenter=False, resize=False)
+iraf.apextract.setParam("dispaxis", "1")
 
-# TODO: Make an interactive image of the 2d spectrum to use to identify the lines with the arc lamps?
+iraf.apall(input=filename, find="No", recenter="No", resize="No")
 
-# Now identify the spectral lines in the arc lamps. Need to replace l1 l2 with the range of rows that have the spectral lines.
+# Now identify the spectral lines in the arc lamps. Need to replace l1 l2 
+# with the range of rows that have the spectral lines.
 
-iraf.identify("science_exposure_filename", section="line l1 l2")
+iraf.identify(filename, section="line 265 285")
 
 # Tell the extracted spectrum what the wavelength solutions are.
 
-iraf.hedit("science_exposure_filename.ms", "REFSPEC1", \
-        "science_exposure_filename", add+)
+iraf.hedit(images=[extracted_filename], fields=["REFSPEC1"], \
+        value=[filename], add="Yes")
 
-iraf.dispcor("science-exposure-filename", \
-        "calibrated-science-exposure-filename")
+iraf.dispcor(input=extracted_filename, output=calibrated_filename)
 
-# TODO: Plot the extracted spectrum?
+# Plot the extracted spectrum?
+
+iraf.splot(calibrated_filename)
+
